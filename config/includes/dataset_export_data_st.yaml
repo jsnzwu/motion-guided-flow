@@ -44,7 +44,7 @@ output_buffer: {
     # "scene_color": {"origin": "SceneColorNoST_%aa","channel": [0, 1, 2]},
 
     "base_color": {"origin": "BaseColor_%aa","channel": [0, 1, 2]},
-    "brdf_color": {"origin": "BrdfColor_%aa","channel": [0, 1, 2]},
+    "dmdl_color": {"origin": "BrdfColor_%aa","channel": [0, 1, 2]},
     "metallic": {"origin": "MetallicRoughnessSpecular_%aa","channel": [0]},
     "roughness": {"origin": "MetallicRoughnessSpecular_%aa","channel": [1]},
     "specular": {"origin": "MetallicRoughnessSpecular_%aa","channel": [2]},
@@ -117,7 +117,7 @@ part: {
     "debug": { 
         "type": "fp16",
         "buffer_name": [
-            "brdf_color",
+            "dmdl_color",
             "scene_color",
             "emissive_mask",
         ],
@@ -137,12 +137,6 @@ part: {
             "base_color",
         ],
     },
-    # "brdf_color": { 
-    #     "type": "fp16",
-    #     "buffer_name": [
-    #         "brdf_color",
-    #     ],
-    # },
     "gbuffer": { 
         "type": "fp16",
         "buffer_name": [

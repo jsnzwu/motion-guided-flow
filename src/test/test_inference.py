@@ -1,4 +1,5 @@
 
+import includes.importer
 import argparse
 import math
 from typing import List
@@ -10,7 +11,6 @@ import copy
 from tqdm import tqdm
 import torch.nn.functional as F
 import torch.nn as nn
-import includes.importer
 from utils.flip_loss import compute_ldrflip
 from torch.amp.autocast_mode import autocast as autocast
 from utils.config_enhancer import enhance_buffer_config, enhance_train_config, update_config
@@ -55,6 +55,7 @@ index = 0
 global_start = 0
 global_end = 0
 
+
 def to_vis(in_mv, flow_type="mv"):
     in_mv = torch.nn.functional.sigmoid((torch.abs(in_mv) ** 0.5)*torch.sign(in_mv))
     if flow_type == "mv":
@@ -63,13 +64,14 @@ def to_vis(in_mv, flow_type="mv"):
         return flow_to_image(in_mv-0.5).float() / 255.0
     else:
         assert False
-        
-        
+
+
 def convert_cmap(data, color_map='inferno'):
     colormap = plt.get_cmap(color_map)
     heatmap = colormap(data.cpu())
     color_cmap = to_torch(heatmap[0, :, :, :3]).type(torch.float32)
     return color_cmap
+
 
 def inference():
     global index
@@ -88,7 +90,7 @@ def inference():
                     suffix = "png"
                     ''' png should add gamma when being exported '''
                     is_gamma = (suffix == 'png')
-                    
+
                     def easy_get(buffer_name, buffer=None, allow_skip=True):
                         if buffer is None and buffer_name in tnr.cur_output.keys():
                             return tnr.cur_output[buffer_name][0]
@@ -111,8 +113,8 @@ def inference():
                             buffer = aces_tonemapper(buffer)
 
                         write_buffer(tnr.config['write_path'] +
-                            # f"{buffer_name}/{buffer_name}.{suffix}", buffer, mkdir=True, is_gamma=suffix == 'png')
-                            f"{buffer_name}/{buffer_name}_{str(out_idx).zfill(4)}.{suffix}", buffer, mkdir=True, is_gamma=suffix == 'png')
+                                     # f"{buffer_name}/{buffer_name}.{suffix}", buffer, mkdir=True, is_gamma=suffix == 'png')
+                                     f"{buffer_name}/{buffer_name}_{str(out_idx).zfill(4)}.{suffix}", buffer, mkdir=True, is_gamma=suffix == 'png')
                     # log.debug(dict_to_string(data_part))
                     tnr.cur_data_index = index
                     data = copy.deepcopy(data_part)
@@ -136,8 +138,9 @@ def inference():
 
                     if mode in ['moflow'] and tnr.config['vars']['skip_pred']:
                         if tnr.config['vars']['block_size'] > 1 and index > num_he and index % tnr.config['vars']['block_size'] == 0:
-                            pred = tnr.cur_data['scene_color_no_st'][0]
+                            pred = tnr.cur_data['scene_color'][0]
                             data_skip = True
+                            # log.debug(f"data skip at index {index}")
                             for item in metric:
                                 tmp_metric[item] = tnr.config['vars'][f"{item}_acc"].last_data
                         else:
@@ -202,7 +205,6 @@ def inference():
                     with autocast(device_type="cuda", dtype=tnr.test_precision_mode, enabled=tnr.enable_amp):
                         error_flip = compute_ldrflip(pred.unsqueeze(0), gt.unsqueeze(0))[0]
 
-
                     flip_map_torch = convert_cmap(error_flip * 4)
                     ssim_map = ssim_per_pixel(pred, gt)
                     # log.debug(dict_to_string([error_flip, flip_map_torch], mmm=True))
@@ -210,11 +212,11 @@ def inference():
                     #     tnr.config['write_path']+f"error_flip/error_flip_{str(out_idx).zfill(4)}.{suffix}", flip_map_torch, mkdir=True, is_gamma=is_gamma)
                     # write_buffer(tnr.config['write_path']+f"error_ssim/error_ssim_{str(out_idx).zfill(4)}.{suffix}", ssim_map, mkdir=True, is_gamma=is_gamma)
                     # write_buffer(tnr.config['write_path']+f"error/error_{str(out_idx).zfill(4)}.{suffix}", error_4x/4, mkdir=True, is_gamma=is_gamma)
-                    
+
                     easy_write('pred', buffer=pred, suffix=suffix)
                     easy_write('gt', buffer=gt, suffix=suffix)
                     easy_write('error_flip', buffer=error_flip, suffix=suffix)
-                    
+
                     log.debug(tnr.config['write_path']+f"pred/pred_{str(out_idx).zfill(4)}.{suffix}")
                     # warped_input = aces_tonemapper(warp(tnr.cur_data['history_scene_color_0'], tnr.cur_data['merged_motion_vector_0'])[0])
                     # error_flip = compute_ldrflip(warped_input.unsqueeze(0), gt.unsqueeze(0))[0]
@@ -236,10 +238,10 @@ def inference():
                     # easy_write('mv', mv, mv_vis=True, suffix='png')
                     # if mode == 'msn':
                     #     rmv = tnr.cur_data['merged_motion_vector_0'][0]
-                        # write_buffer(tnr.config['write_path']+f"rmv_raw/rmv_raw_{str(out_idx).zfill(4)}.exr",
-                        #             align_channel_buffer(rmv, channel_num=3, mode="value", value=0.0), mkdir=True)
-                        # write_buffer(tnr.config['write_path']+f"rmv/rmv_{str(out_idx).zfill(4)}.{suffix}",
-                        #              align_channel_buffer(to_vis(rmv)), mkdir=True)
+                    # write_buffer(tnr.config['write_path']+f"rmv_raw/rmv_raw_{str(out_idx).zfill(4)}.exr",
+                    #             align_channel_buffer(rmv, channel_num=3, mode="value", value=0.0), mkdir=True)
+                    # write_buffer(tnr.config['write_path']+f"rmv/rmv_{str(out_idx).zfill(4)}.{suffix}",
+                    #              align_channel_buffer(to_vis(rmv)), mkdir=True)
             index += 1
 
 
@@ -262,30 +264,35 @@ if __name__ == '__main__':
     parser.add_argument("--image", default=False, action='store_true', help="block_size")
     parser.add_argument("--st", default=False, action='store_true', help="block_size")
     parser.add_argument("--scene", default="", help="block_size")
+    parser.add_argument("--config", default="", help="inference config path")
     args = parser.parse_args()
     mode = args.mode
     input_mode = args.mode
     assert num_he == 2
-    multiple_test = args.block > 1 or args.block == 0
+    multiple_test = args.block > 2 or args.block == 0
     block_size = args.block
     same_block = args.same_block
     export_image = args.image
     export_video = args.video
     cmd_scene = args.scene
-    
+
     assert mode in ['moflow'], "--mode must be moflow"
     assert cmd_scene, "--scene must be specified in cmd"
 
     metric = ['psnr', 'ssim', 'lpips']
     if mode == "moflow":
         dataset_cfg = parse_config("config/dataset/infer_dataset_v6_moflow_ess.yaml")
-        config_path = [
-            "config/inference/DT_moflow.yaml",
-            # "config/inference/multi_3_DT_moflow.yaml",
-        ]
+        if args.config:
+            config_path = [args.config]
+        else:
+            config_path = [
+                "config/inference/DT_moflow.yaml",
+                # "config/inference/FC_moflow.yaml",
+                # "config/inference/multi_3_DT_moflow.yaml",
+            ]
     else:
         raise NotImplementedError(f"{mode} is not supported (list: moflow)")
-    
+
     scene_name = cmd_scene.split("_")[0] + "_T"
     path_alias = scene_name
     inference_name = cmd_scene
@@ -298,7 +305,8 @@ if __name__ == '__main__':
     ]
     if export_image:
         dataset_cfg['dataset']['test_scene'] = [
-            {"name": f"{scene_name}/{inference_name}_720", "config": {"indice": [global_start-1,global_end+1], "path_alias": path_alias}},
+            {"name": f"{scene_name}/{inference_name}_720",
+                "config": {"indice": [global_start-1, global_end+1], "path_alias": path_alias}},
         ]
     else:
         dataset_cfg['dataset']['test_scene'] = [
@@ -338,7 +346,7 @@ if __name__ == '__main__':
         else:
             block_sizes = [block_size + _ for _ in range(num_cfg)]
     else:
-        block_sizes = [1 for _ in range(num_cfg)]
+        block_sizes = [block_size for _ in range(num_cfg)]
     for i in range(len(config_path)):
         tmp_config = parse_config(config_path[i], root_path="")
         # log.debug(dict_to_string(tmp_config['model']['input_buffer']))
@@ -351,6 +359,7 @@ if __name__ == '__main__':
         config_train['initial_inference'] = False
         # log.debug(dict_to_string(dataset_cfg['model']['input_buffer']))
         tmp_model = eval(config_train['model']['class'])(config_train)
+
         def print_model_weights_dtype(model):
             for name, param in model.named_parameters():
                 print(f"Parameter: {name}, Data type: {param.dtype}")
@@ -368,6 +377,11 @@ if __name__ == '__main__':
         tmp_trainer.config['vars']['skip_pred'] = False
         tmp_trainer.config['vars']['skip_pred'] = block_sizes[i] > 1
         tmp_trainer.config['vars']['block_size'] = block_sizes[i]
+        tmp_trainer.config['trainer']['recurrent_test'] = {
+            "block_size": [
+                {'start': 0, 'end': 1, 'value': block_sizes[i], 'ratio': True},
+            ]
+        }
         for item in metric:
             tmp_trainer.config['vars'][f"{item}_acc"] = Accumulator()
             for j in range(block_sizes[i]):
@@ -377,6 +391,7 @@ if __name__ == '__main__':
         tmp_trainer.config['vars']['writer'] = SummaryWriter(log_dir=tmp_trainer.config['write_path'])
         tmp_trainer.config['vars']['step_log_file'] = f"{tmp_trainer.config['write_path']}/step.log"
         tmp_trainer.config['vars']['epoch_log_file'] = f"{tmp_trainer.config['write_path']}/epoch.log"
+
         tmp_trainer.last_output = []
         create_dir(tmp_trainer.config['write_path'])
         remove_all_in_dir(tmp_trainer.config['write_path'])

@@ -5,8 +5,8 @@ export_path: "/path/to/npz" # store npz
 dataset_path: {
   "CV_T": "/path/to/npz",
   # "DT_T": "/path/to/npz",
-  "DT_T": "/data4/wzz/dataset/T/",
-  "FC_T": "/data4/wzz/dataset/T/",
+  "DT_T": "../dataset", # demo dataset path
+  "FC_T": "../dataset", # demo dataset path
   # "ST_T": "/path/to/npz",
   "ST_T": "/path/to/npz",
   "WT_T": "/path/to/npz",

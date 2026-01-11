@@ -1,4 +1,4 @@
-# MoFlow: Motion-Guided Flows for Recurrent Rendered Frame Prediction [Transaction on Graphics 2025]
+# MoFlow: Motion-Guided Flows for Recurrent Rendered Frame Prediction
 
 This is offical repository for our paper, **MoFlow: Motion-Guided Flows for Recurrent Rendered Frame Prediction**<br>
 **Authors:** Zhizhen Wu, Zhilong Yuan, Chenyu Zuo, Yazhen Yuan, Yinfan Peng, Guiyang Pu, Rui Wang and Yuchi Huo.<br>
@@ -11,7 +11,7 @@ in Transactions on Graphics. <br>
 # Updates & Todos (Keep Updating...)
 ```
 [2025-12-02]: Release code.
-[TODO]: Add pretrained models and dataset samples.
+[2026-01-11]: Add pretrained models and dataset samples.
 [TODO]: Add details on dataset generation.
 ```
 # Setup
@@ -19,18 +19,58 @@ in Transactions on Graphics. <br>
 1. Make a directory for workspace and clone the repository: 
 ```
 mkdir motion-guided-flow; cd motion-guided-flow
-git clone https://github.com/VicRanger/motion-guided-flow code
+git clone https://github.com/jsnzwu/motion-guided-flow code
 cd code
 ```
-2. Install conda env: `scripts/create_env.sh` in Linux or `scripts/create_env.bat` in Windows
+2. Install conda env:
+```bash
+conda update -n base -c defaults conda --yes
+conda env create -f env.yaml
+```
+# Quick Demo
+
+> 
+> **Install prerequisite: `huggingface-cli`**  
+> ```bash
+> curl -LsSf https://hf.co/cli/install.sh | bash
+> ```
+
+## 1) Download pretrained models
+
+```bash
+./scripts/download_pretrained_models_demo.sh
+```
+
+## 2) Download the demo dataset
+
+```bash
+./scripts/download_datasets_demo.sh
+```
+## 3) Run the inference demo
+
+To generate inference results on the **DownTown** scene with the **MoFlow** model:
+
+```bash
+python src/test/test_inference.py --mode moflow --config ./config/inference/DT_moflow.yaml --block 2 --video --scene DT_TEST
+```
+
+To generate inference results on the **FutureCity** scene with the **MoFlow** model:
+
+```bash
+python src/test/test_inference.py --mode moflow --config ./config/inference/FC_moflow.yaml --block 2 --video --scene FC_TEST
+```
+
+**`--block`** controls the prediction interval. Setting `--block 2` predicts one frame every other frame, producing an alternating sequence like:
+`[rendered, predicted, rendered, predicted, ...]`.
+
 
 # Dataset Generation
 
 ## Export Buffers from UE4
-Please refer to [Export Buffers from UE4 in LMV](https://github.com/VicRanger/learnable-motion-vector?tab=readme-ov-file#export-buffers-from-ue4) for details.
+Please refer to [Export Buffers from UE4 in LMV](https://github.com/jsnzwu/learnable-motion-vector?tab=readme-ov-file#export-buffers-from-ue4) for details.
 
 ## Preprocess
-Please refer to [Compress Raw Files into NPZ Files in LMV](https://github.com/VicRanger/learnable-motion-vector?tab=readme-ov-file#compress-raw-files-into-npz-files) for details.
+Please refer to [Compress Raw Files into NPZ Files in LMV](https://github.com/jsnzwu/learnable-motion-vector?tab=readme-ov-file#compress-raw-files-into-npz-files) for details.
 ### Run the script
 ```
 python src/test/test_export_buffer.py --config config/export/export_st.yaml

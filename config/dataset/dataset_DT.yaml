@@ -1,0 +1,8 @@
+dataset: 
+  "train_scene": [
+      {"name":"DT_T/DT_TEST_720", "config":{"indice":[], "path_alias": "DT_T"}},
+      # your actual train datasets go here
+  ]
+  "test_scene": [
+      {"name":"DT_T/DT_TEST_720", "config":{"indice":[], "path_alias": "DT_T"}},
+  ]

@@ -1,13 +1,13 @@
-job_name: "inference/DT_moflow"
+job_name: "inference/FC_moflow"
 config_root_path: "config/"
 base: "model-arch/moflow_base.yaml"
 pipeline: [
     "model-pipeline/moflow_config.yaml",
     "model-pipeline/moflow_loss.yaml",
-    "dataset/dataset_DT.yaml",
+    "dataset/dataset_FC.yaml",
     "trainers/moflow_trainer.yaml",
 ]
-pre_model: "../checkpoints/251201_DT_moflow_1x.pt"
+pre_model: "../checkpoints/251201_FC_moflow_1x.pt"
 
 initial_inference: false
 # log:
@@ -57,9 +57,8 @@ dataset:
     block_size: 8
     part_size: 4
     train_scale: !!float 1.0
-    
 model: {
-    model_name: "DT_moflow",
+    model_name: "FC_moflow",
     "dummy_input_size_h": 720, # 368 480  720 1088 1440 2160
     "dummy_input_size_w": 1280, # 960 880 1280 1920 2560 3840
     "history_encoders": {

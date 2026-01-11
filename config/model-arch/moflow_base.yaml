@@ -1,7 +1,7 @@
 job_name: "mfrrnet_v6"
 base: "base.yaml"
 include: [
-  "includes/dataset_export_data_st_aa.yaml",
+  "includes/dataset_export_data_st.yaml",
 ]
 pipeline: [
 ]
