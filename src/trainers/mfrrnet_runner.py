@@ -25,7 +25,7 @@ from datasets.mfrrnet_dataset import MFRRNetDataset
 
 
 class MFRRNetRunner(Runner):
-    def __init__(self, config, model, resume: bool = False):
+    def __init__(self, config: dict | TaskConfig, model, resume: bool = False):
         if isinstance(getattr(model, "trainer_config", None), TaskConfig):
             config = model.trainer_config
         elif not isinstance(config, TaskConfig):
@@ -41,7 +41,7 @@ class MFRRNetRunner(Runner):
         self.config.unfreeze()
         object.__setattr__(self.config, "_allow_new_keys", True)
 
-    def _normalize_mode(self, mode) -> ForwardMode:
+    def _normalize_mode(self, mode: ForwardMode | str) -> ForwardMode:
         if isinstance(mode, ForwardMode):
             return mode
         if isinstance(mode, str):
@@ -51,13 +51,13 @@ class MFRRNetRunner(Runner):
     def prepare(self, mode: ForwardMode | str) -> None:
         super().prepare(self._normalize_mode(mode))
 
-    def update_forward(self, epoch_index=None, batch_index=None, mode=ForwardMode.train) -> None:
+    def update_forward(self, epoch_index: int | None = None, batch_index: int | None = None, mode: ForwardMode = ForwardMode.train) -> None:
         super().update_forward(epoch_index=epoch_index, batch_index=batch_index, mode=self._normalize_mode(mode))
 
-    def update_backward(self, epoch_index=None, batch_index=None, mode=ForwardMode.train) -> None:
+    def update_backward(self, epoch_index: int | None = None, batch_index: int | None = None, mode: ForwardMode = ForwardMode.train) -> None:
         super().update_backward(epoch_index=epoch_index, batch_index=batch_index, mode=self._normalize_mode(mode))
 
-    def update(self, data, epoch_index=None, batch_index=None, mode=ForwardMode.train) -> None:
+    def update(self, data, epoch_index: int | None = None, batch_index: int | None = None, mode: ForwardMode = ForwardMode.train) -> None:
         mode = self._normalize_mode(mode)
         data_list = data if isinstance(data, list) else [data]
         for item in data_list:

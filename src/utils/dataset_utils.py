@@ -190,7 +190,10 @@ def set_dataset_global_config(buffer_config):
     ''' TODO: add meanshift and normalization '''
 
 from typing import Optional
+from dataclasses import dataclass, field
 
+
+@dataclass
 class DatasetGlobalConfig:
     max_luminance = -1
     log_tonemapper__mu = 8.0
