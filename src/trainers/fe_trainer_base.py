@@ -1,11 +1,13 @@
-from utils.log import log
+from wickit.utils.log import configure_logging, log
 import numpy as np
 import torch
-from utils.str_utils import dict_to_string
-from utils.buffer_utils import data_as_type
+from wickit.utils.basic.string import dict_to_string
 from utils.buffer_utils import create_flip_data
-from utils.dataset_utils import DatasetGlobalConfig, data_to_device
+from utils.dataset_utils import DatasetGlobalConfig
+from wickit.utils.basic.tensor import data_as_type, data_to_device
 from trainers.trainer_base import TrainerBase
+
+configure_logging()
 ''' create feature_0 and encoding_0 '''
 
 

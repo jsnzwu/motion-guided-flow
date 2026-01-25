@@ -1,9 +1,11 @@
 # import portalocker
 import os
 import torch
-from utils.buffer_utils import fix_dmdl_color_zero_value, read_buffer, to_numpy, write_buffer
+from utils.buffer_utils import fix_dmdl_color_zero_value, to_numpy
+from wickit.utils.io.imageio import read_image
 from utils.log import log
-from utils.str_utils import dict_to_string
+from wickit.utils.basic.string import dict_to_string
+from wickit.utils.basic.tensor import data_to_device, data_to_device_dict
 from utils.utils import create_dir, del_dict_item, get_tensor_mean_min_max_str
 from utils.warp import warp
 import numpy as np
@@ -40,29 +42,6 @@ def get_input_filter_list(config: dict) -> list:
             ret.add(tmp_item)
             res.append(tmp_item)
     return res
-
-def data_to_device_dict(data: dict, device='cuda:0', non_blocking=True) -> dict:
-    assert isinstance((ret:=data_to_device(data, device=device, non_blocking=non_blocking)), dict)
-    return ret
-
-def data_to_device(data, device='cuda:0', non_blocking=True):
-    if isinstance(data, torch.Tensor):
-        return data.to(device, non_blocking=non_blocking)
-    elif isinstance(data, str) or isinstance(data, int):
-        return data
-    elif isinstance(data, dict):
-        for k in data.keys():
-            data[k] = data_to_device(
-                data[k], device=device, non_blocking=non_blocking)
-        return data
-    elif isinstance(data, list):
-        for i in range(len(data)):
-            data[i] = data_to_device(
-                data[i], device=device, non_blocking=non_blocking)
-        return data
-    else:
-        raise Exception(
-            "data to gpu shouldnt include non-tensor item, type:{}".format(type(data)))
 
 
 def transform_position_image(pos, mat):
@@ -125,7 +104,7 @@ def create_future_frame(next_data, name, index=0):
     return ret
 
 
-lut = read_buffer("asset/precomputed_brdf_lut.exr")[:2, ...].unsqueeze(0)
+lut = read_image("asset/precomputed_brdf_lut.exr")[:2, ...].unsqueeze(0)
 
 
 def create_dmdl_color_brdf(roughness, nov, albedo, metallic, specular, skybox_mask=None, fix=False):

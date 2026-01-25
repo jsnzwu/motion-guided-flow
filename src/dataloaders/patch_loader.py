@@ -10,20 +10,20 @@ from zipfile import BadZipfile
 import zipfile
 import torch
 import gc
-from utils.buffer_utils import data_as_type, write_buffer
 # from .patch_cropper import crop
 from utils.utils import del_dict_item, write_text_to_file
 from utils.utils import create_dir, get_file_component
 from .raw_data_importer import DatasetFormat, compress_buffer, get_augmented_buffer, get_extend_buffer, parse_buffer_name, split_buffer
 from .raw_data_importer import dualize_buffer_list
 from .raw_data_importer import dualize_buffer_config
-from utils.dataset_utils import data_to_device, write_npz
+from utils.dataset_utils import write_npz
+from wickit.utils.basic.tensor import data_as_type, data_to_device
 from .dataset_base import MetaData, create_metadata_by_glob
 import numpy as np
 from .raw_data_importer import UE4RawDataLoader
 from utils.model_utils import min_max_scalar
 from tqdm import tqdm
-from utils.str_utils import dict_to_string
+from wickit.utils.basic.string import dict_to_string
 from utils.log import log
 import multiprocessing as mp
 from utils.buffer_utils import aces_tonemapper
@@ -487,7 +487,7 @@ class PatchLoader(PatchLoaderBase):
         if path is None:
             path = self.export_path
         return "{}/{}/{}/{}.npz".format(
-            path, metadata.scene_name, dir_name, "{}{}".format(metadata.index, postfix))
+            path, metadata.dataset_name, dir_name, "{}{}".format(metadata.index, postfix))
 
     def get_buffered_last_data(self, metadata: MetaData, buffer_config, num: int = 1, augmented_list=[]):
         ret = []

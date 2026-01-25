@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch
 from utils.log import log
-from utils.str_utils import dict_to_string
+from wickit.utils.basic.string import dict_to_string
 class ConvGRUCellV6(nn.Module):
     def __init__(self, hidden_channel, out_channel, kernel_size=1, bias=True):
         """

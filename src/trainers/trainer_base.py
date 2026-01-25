@@ -9,26 +9,31 @@ import torch.utils.data.distributed
 import torch.distributed
 from torch.nn.parallel import DistributedDataParallel as DDP
 import gc
-from utils.buffer_utils import add_text_to_image, data_as_type, data_as_type_dict, to_ldr_numpy
-from lr_scheduler.constant_warmup import ConstantWarmup
-from lr_scheduler.cosine_annealing_warmup_restarts import CosineAnnealingWarmupRestarts
-from samplers.distributed_partition_sampler import DistributedPartitionSampler
+from utils.buffer_utils import add_text_to_image, to_ldr_numpy
+from wickit.lr_schedulers import ConstantWarmup, CosineAnnealingWarmupRestarts
+from wickit.samplers.distributed_partition_sampler import DistributedPartitionSampler
 from dataloaders.dataset_base import create_meta_data_list
 from dataloaders.patch_loader import PatchLoader
 from datasets.mfrrnet_dataset import MFRRNetDataset
 from utils.loss_utils import lpips, psnr, ssim
 from utils.utils import add_at_dict_front, create_dir, get_file_component, get_tensor_mean_min_max_str, inline_assert, \
     remove_all_in_dir, write_text_to_file
-from utils.str_utils import dict_to_string, dict_to_string_join
-from utils.log import log
+from wickit.utils.basic.string import dict_to_string, dict_to_string_join
+from wickit.utils.log import configure_logging, log
 from utils.warp import warp
-from utils.dataset_utils import data_to_device, data_to_device_dict, get_input_filter_list, resize
+from utils.dataset_utils import get_input_filter_list, resize
 from utils.utils import del_data, del_dict_item
-from utils.buffer_utils import buffer_data_to_vis, gamma, to_numpy, write_buffer
+from utils.buffer_utils import buffer_data_to_vis, gamma, to_numpy
 from models.loss.loss import LossFunction
-from models.model_base import ModelBase
+from wickit.models import ModelBase
 from tqdm import tqdm
-from utils.buffer_utils import align_channel_buffer
+from wickit.utils.basic.tensor import (
+    align_channel_buffer,
+    data_as_type,
+    data_as_type_dict,
+    data_to_device,
+    data_to_device_dict,
+)
 import itertools
 import torch.autograd
 from torch.optim import AdamW, Adam
@@ -44,6 +49,8 @@ import torch.nn.functional as F
 import time
 import math
 from config.config_utils import convert_to_dict
+
+configure_logging()
 
 
 def parse_tensor_type(type_str):
@@ -243,7 +250,7 @@ class TrainerBase:
         # log.debug(self.config['dataset'])
         self.test_dataset = eval(self.config['dataset']['class'])(
             test_config, 'test', self.test_meta_data_lists[epoch_index], self.data_loader, mode="test")
-        self.cur_test_dataset_scene_name = self.test_meta_data_lists[epoch_index][0].scene_name
+        self.cur_test_dataset_scene_name = self.test_meta_data_lists[epoch_index][0].dataset_name
 
     def create_valid_dataset(self) -> None:
         valid_config = copy.deepcopy(self.config)

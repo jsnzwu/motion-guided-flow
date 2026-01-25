@@ -16,7 +16,8 @@ from torch.amp.autocast_mode import autocast as autocast
 from utils.config_enhancer import enhance_buffer_config, enhance_train_config, update_config
 from utils.flow_vis import mv_to_image
 from utils.buffer_utils import aces_tonemapper, gamma, inv_gamma, inv_log_tonemapper
-from utils.buffer_utils import to_numpy, to_torch
+from utils.buffer_utils import to_numpy
+from wickit.utils.basic.tensor import to_torch
 from utils.flow_vis import flow_to_image
 from utils.buffer_utils import flow_to_motion_vector
 from utils.parser_utils import create_py_parser
@@ -36,13 +37,13 @@ import torch.distributed as dist
 from utils.warp import warp
 from utils.utils import write_text_to_file
 from models.mfrrnet.mfrrnet import MFRRNetModel
-from utils.buffer_utils import align_channel_buffer
-from utils.buffer_utils import write_buffer
+from wickit.utils.basic.tensor import align_channel_buffer
+from wickit.utils.io.imageio import write_image
 from utils.utils import Accumulator
 from utils.utils import del_data
 from dataloaders.patch_loader import PatchLoader
 from config.config_utils import parse_config
-from utils.str_utils import dict_to_string
+from wickit.utils.basic.string import dict_to_string
 from utils.log import log
 from utils.buffer_utils import log_tonemapper
 from utils.warp import warp
@@ -112,7 +113,7 @@ def inference():
                         elif tonemap:
                             buffer = aces_tonemapper(buffer)
 
-                        write_buffer(tnr.config['write_path'] +
+                        write_image(tnr.config['write_path'] +
                                      # f"{buffer_name}/{buffer_name}.{suffix}", buffer, mkdir=True, is_gamma=suffix == 'png')
                                      f"{buffer_name}/{buffer_name}_{str(out_idx).zfill(4)}.{suffix}", buffer, mkdir=True, is_gamma=suffix == 'png')
                     # log.debug(dict_to_string(data_part))
@@ -242,8 +243,8 @@ def inference():
                     #             align_channel_buffer(rmv, channel_num=3, mode="value", value=0.0), mkdir=True)
                     # write_buffer(tnr.config['write_path']+f"rmv/rmv_{str(out_idx).zfill(4)}.{suffix}",
                     #              align_channel_buffer(to_vis(rmv)), mkdir=True)
+            break        
             index += 1
-
 
 def update_inference_config(config):
     config['_input_config'] = copy.deepcopy(config)
@@ -257,13 +258,13 @@ def update_inference_config(config):
 if __name__ == '__main__':
     torch.multiprocessing.set_start_method('spawn')
     parser = argparse.ArgumentParser(description="trainer")
-    parser.add_argument("--mode", default="", help="inference mode")
+    parser.add_argument("--mode", default="moflow", help="inference mode")
     parser.add_argument("--block", type=int, default=1, help="block_size")
     parser.add_argument("--same-block", default=False, action='store_true', help="block_size")
     parser.add_argument("--video", default=False, action='store_true', help="block_size")
     parser.add_argument("--image", default=False, action='store_true', help="block_size")
     parser.add_argument("--st", default=False, action='store_true', help="block_size")
-    parser.add_argument("--scene", default="", help="block_size")
+    parser.add_argument("--scene", default="DT_TEST", help="block_size")
     parser.add_argument("--config", default="", help="inference config path")
     args = parser.parse_args()
     mode = args.mode

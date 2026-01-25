@@ -1,7 +1,7 @@
 
 from utils.utils import create_dir, get_file_component
 from yacs.config import CfgNode
-from utils.str_utils import dict_to_string
+from wickit.utils.basic.string import dict_to_string
 from utils.log import get_local_rank, log
             
 def merge_from_another(a: CfgNode, b: CfgNode, allow_new=False):
@@ -29,6 +29,7 @@ def convert_to_dict(cfg_node):
 
 def create_config(path: str) -> CfgNode:
     try:
+        path = path.replace('\\', '/')
         config = CfgNode.load_cfg(open(path, "r"))
         # log.debug(f"CfgNode loaded: {path}")
     except Exception as e:
@@ -97,3 +98,15 @@ def parse_config(path: str, root_path="") -> CfgNode:
         config = base_cfg
 
     return config
+
+
+def load_config(path: str, root_path: str = "") -> dict:
+    config = parse_config(path, root_path=root_path)
+    return convert_to_dict(config)
+
+
+def load_task_config(path: str, root_path: str = ""):
+    from utils.config_adapter import dict_to_config
+
+    config = load_config(path, root_path=root_path)
+    return dict_to_config(config)

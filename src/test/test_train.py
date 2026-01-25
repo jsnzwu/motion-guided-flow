@@ -24,7 +24,7 @@ if __name__ == "__main__":
     from utils.parser_utils import create_py_parser
     from config.config_utils import create_config, parse_config, convert_to_dict
     from utils.log import log
-    from utils.str_utils import dict_to_string
+    from wickit.utils.basic.string import dict_to_string
     parser = argparse.ArgumentParser(description="trainer")
     parser.add_argument("--config", help="trainer config file path")
     parser.add_argument('--train', action='store_true', default=False)

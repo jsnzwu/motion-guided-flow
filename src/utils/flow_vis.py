@@ -16,10 +16,11 @@
 # Date Created: 2018-08-03
 
 import numpy as np
-from utils.str_utils import dict_to_string
+from wickit.utils.basic.string import dict_to_string
 from utils.log import log
 
-from utils.buffer_utils import motion_vector_to_flow, to_numpy, to_torch
+from utils.buffer_utils import motion_vector_to_flow, to_numpy
+from wickit.utils.basic.tensor import to_torch
 
 def make_colorwheel():
     """

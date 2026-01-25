@@ -1,0 +1,3 @@
+[submodule "external/wickit"]
+	path = external/wickit
+	url = https://github.com/jsnzwu/wickit

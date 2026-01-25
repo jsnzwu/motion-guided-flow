@@ -3,7 +3,7 @@ import json
 from config.config_utils import convert_to_dict
 from utils.dataset_utils import get_input_filter_list
 from utils.parser_utils import parse_buffer_name
-from utils.str_utils import dict_to_string
+from wickit.utils.basic.string import dict_to_string
 from utils.utils import del_dict_item
 from utils.log import log
 
@@ -76,12 +76,15 @@ def initialize_recipe(recipe: dict, history_num: int = -1, history_list: list[in
     
     # attr = recipe['augmented_data_attribute']
     from utils.model_utils import dim2d_dict, dim1d_dict
+    from wickit.utils import model as wickit_model
     
     for key,item in recipe['data_attribute'].items():
         if item['type'] == 'image':
             dim2d_dict[key] = item['channel']
+            wickit_model.dim2d_dict[key] = item['channel']
         else:
             dim1d_dict[key] = item['channel']
+            wickit_model.dim1d_dict[key] = item['channel']
     old_recipe = copy.deepcopy(recipe['augmented_data_recipe'])
     additional_recipe = {}
     for key_scale, config in scale_config.items():

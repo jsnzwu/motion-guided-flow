@@ -3,7 +3,7 @@ import json
 import argparse
 import os
 import re
-from utils.str_utils import dict_to_string
+from wickit.utils.basic.string import dict_to_string
 from utils.log import log
 import numpy as np
 import torch

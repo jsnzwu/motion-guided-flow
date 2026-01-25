@@ -9,13 +9,13 @@ import sys
 
 if __name__ == '__main__':
     import includes.importer
-    from utils.buffer_utils import align_channel_buffer
+    from wickit.utils.basic.tensor import align_channel_buffer
     from dataloaders.patch_loader import PatchLoader
     from config.config_utils import parse_config
     from utils.dataset_utils import get_input_filter_list
     from utils.config_enhancer import enhance_buffer_config
     from dataloaders.dataset_base import MetaData
-    from utils.str_utils import dict_to_string
+    from wickit.utils.basic.string import dict_to_string
     from utils.utils import get_tensor_mean_min_max_str
     from utils.log import log
     from utils.utils import remove_all_in_dir

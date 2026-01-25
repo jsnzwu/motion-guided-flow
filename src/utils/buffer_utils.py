@@ -1,116 +1,21 @@
 import math
 import imghdr
 import re
-from utils.str_utils import dict_to_string
+from wickit.utils.basic.string import dict_to_string
+from wickit.utils.basic.tensor import align_channel_buffer
+from wickit.utils.io.imageio import read_image
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
 import cv2
 import os
 from utils.parser_utils import parse_buffer_name
-from utils.utils import create_dir, get_file_component, get_tensor_mean_min_max_str
 from utils.log import log
 from tqdm import tqdm
 import imageio
 import skimage.io
 albedo_min_clamp = 0.01
 
-ones_map_cache = {}
-
-
-def get_ones_map(data):
-    b, c, h, w = data.shape
-    k = f"{b}_{c}_{h}_{w}"
-    if k not in ones_map_cache.keys():
-        ones_map_cache[k] = torch.ones_like(data, device=data.device, dtype=data.dtype)
-    return ones_map_cache[k]
-
-
-zeros_map_cache = {}
-
-
-def get_zeros_map(data: torch.Tensor):
-    b, c, h, w = data.shape
-    k = f"{b}_{c}_{h}_{w}_{data.device}_{data.dtype}"
-    if k not in zeros_map_cache.keys():
-        zeros_map_cache[k] = torch.zeros_like(data, device=data.device, dtype=data.dtype)
-    return zeros_map_cache[k]
-
-def get_zeros_map_by_shape(shape:torch.Size, device, dtype):
-    b, c, h, w = shape
-    k = f"{b}_{c}_{h}_{w}_{device}_{dtype}"
-    if k not in zeros_map_cache.keys():
-        zeros_map_cache[k] = torch.zeros((b,c,h,w), device=device, dtype=dtype)
-    return zeros_map_cache[k]
-
-def to_fp16(data):
-    if data.dtype != torch.float16:
-        data = data.type(torch.float16)
-        if data.device == torch.device("cpu"):
-            data = data.cuda().clamp_(-65504, 65504)
-        else:
-            data = data.clamp_(-65504, 65504)
-    return data
-
-def to_bf16(data):
-    data = data.type(torch.bfloat16)
-    return data
-
-def to_fp32(data):
-    data = data.type(torch.float32)
-    return data
-
-def tensor_as_type_str(tensor, type_str):
-    ops = {
-        'fp16': lambda tensor: tensor_as_type(tensor, torch.float16),
-        'bf16': lambda tensor: tensor_as_type(tensor, torch.bfloat16),
-        'fp32': lambda tensor: tensor_as_type(tensor, torch.float32),
-    }
-    return ops[type_str](tensor)
-
-
-def tensor_as_type(tensor, dtype):
-    ops = {
-        torch.float16: to_fp16,
-        torch.bfloat16: to_bf16,
-        torch.float32: to_fp32,
-    }
-    if tensor.dtype not in ops.keys() or tensor.dtype == dtype:
-        return tensor
-    return ops[dtype](tensor)
-
-def data_as_type_str(data, type_str):
-    if isinstance(data, dict):
-        for k in data.keys():
-            data[k] = data_as_type_str(data[k], type_str)
-        return data
-    elif isinstance(data, list):
-        for i in range(len(data)):
-            data[i] = data_as_type_str(data[i], type_str)
-        return data
-    elif isinstance(data, torch.Tensor):
-        return tensor_as_type_str(data, type_str)
-    else:
-        return data
-    
-def data_as_type_dict(data: dict, typename: torch.dtype) -> dict:
-    assert isinstance((ret:=data_as_type(data, typename)), dict)
-    return ret
-
-def data_as_type(data, typename: torch.dtype):
-    if isinstance(data, dict):
-        for k in data.keys():
-            data[k] = data_as_type(data[k], typename)
-        return data
-    elif isinstance(data, list):
-        for i in range(len(data)):
-            data[i] = data_as_type(data[i], typename)
-        return data
-    elif isinstance(data, torch.Tensor):
-        return tensor_as_type(data, typename)
-    else:
-        return data
-    
 def hdr_to_ldr(img, use_gamma=False):
     if use_gamma:
         gamma_func = gamma
@@ -453,101 +358,6 @@ def show(img):
     plt.show()
 
 
-def read_buffer(path, channel=None):
-    '''
-    C,H,W
-    '''
-    if path.endswith("EXR") or path.endswith("exr"):
-        image = cv2.imread(path, flags=cv2.IMREAD_UNCHANGED)
-        if image.shape[2] == 4:
-            image = image[:, :, [2, 1, 0, 3]]
-        elif image.shape[2] == 3:
-            image = image[:, :, ::-1]
-        image = np.array(image)
-    else:
-        image = imageio.imread(path).astype(float) / 255.0
-
-    if channel is not None:
-        image = image[:, :, channel]
-    image = to_torch(image).type(torch.float32)
-    return image
-
-
-def to_torch(np_img):
-    data = torch.from_numpy(np_img)
-    data = data.permute(2, 0, 1)
-    return data
-
-
-def align_channel_buffer(data, channel_num=3, mode='zero', value:float=0):
-    n = len(data.shape)
-    if n == 3:
-        c, h, w = data.shape
-        if c < channel_num:
-            if mode == 'repeat':
-                if c != 1:
-                    raise NotImplementedError(
-                        'mode "repeat" only support c=1, now c={}'.format(c))
-                data = data.repeat(channel_num, 1, 1)
-            elif mode == 'zero':
-                data = torch.cat(
-                    [data, torch.zeros(channel_num - c, h, w).to(data.device)])
-            elif mode == 'one':
-                data = torch.cat(
-                    [data, torch.ones(channel_num - c, h, w).to(data.device)])
-            elif mode == 'value':
-                data = torch.cat(
-                    [data, value * torch.ones(channel_num - c, h, w).to(data.device)])
-    elif n == 4:
-        b, c, h, w = data.shape
-        if c < channel_num:
-            if mode == 'repeat':
-                if c != 1:
-                    raise NotImplementedError(
-                        'mode "repeat" only support c=1, now c={}'.format(c))
-                data = data.repeat(1, channel_num, 1, 1)
-            elif mode == 'zero':
-                data = torch.cat(
-                    [data, torch.zeros(b, channel_num - c, h, w).to(data.device)], dim=1)
-            elif mode == 'one':
-                data = torch.cat(
-                    [data, torch.ones(b, channel_num - c, h, w).to(data.device)])
-            elif mode == 'value':
-                data = torch.cat(
-                    [data, value * torch.ones(b, channel_num - c, h, w).to(data.device)])
-    return data
-
-
-def write_buffer(path, image, channel_num=3, mkdir=False, is_numpy=False, is_gamma=False, hdr=False, convert_to_uint8=True):
-    if mkdir:
-        res = get_file_component(path)
-        create_dir(res['path'])
-    c, h, w = image.shape
-    if c < channel_num:
-        if c == 1:
-            image = align_channel_buffer(
-                image, channel_num=channel_num, mode="repeat")
-        else:
-            image = align_channel_buffer(
-                image, channel_num=channel_num, mode="zero")
-    elif c > channel_num:
-        image = image[:channel_num - c, ...]
-    if path.endswith(".png") or path.endswith(".jpg"):
-        if hdr:
-            image = hdr_to_ldr(image)
-        elif is_gamma:
-            image = gamma(image)
-        if convert_to_uint8:
-            image *= 255.0
-    if not is_numpy:
-        image = data_as_type(image, torch.float32)
-        output = to_numpy(image)
-    else:
-        output = image
-    if path.endswith(".png"):
-        cv2.imwrite(path, output[..., ::-1], [cv2.IMWRITE_PNG_COMPRESSION, 0])
-    else:
-        imageio.imwrite(path, output)
 
 
 def to_numpy(arr, detach=True, cpu=True):
@@ -618,14 +428,14 @@ def d3_to_d2(data):
 def export_video_in_path(path, image_files, output_path, fps, tonemap=False):
     log.debug("{} ... {}".format(str(image_files[:3]), str(image_files[-3:])))
     video = cv2.VideoWriter()
-    image_0 = read_buffer(path + "/" + image_files[0])
+    image_0 = read_image(path + "/" + image_files[0])
     C, H, W = image_0.shape
     video.open(output_path, cv2.VideoWriter_fourcc(
         'm', 'p', '4', 'v'), fps, (W, H), True)
     # log.debug(image_files)
     for f in tqdm(image_files):
-        # tmp_image = read_buffer(path + "/" + f)
-        tmp_image = read_buffer(path + "/" + f)
+        # tmp_image = read_image(path + "/" + f)
+        tmp_image = read_image(path + "/" + f)
         if tonemap:
             tmp_image = aces_tonemapper(tmp_image)
         tmp_image = to_numpy(align_channel_buffer(tmp_image, channel_num=3))

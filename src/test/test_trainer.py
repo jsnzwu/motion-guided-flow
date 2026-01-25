@@ -12,7 +12,7 @@ import includes.importer
 
 from config.config_utils import convert_to_dict, create_config, parse_config
 from utils.utils import Accumulator, seconds_to_str, str_to_seconds
-from utils.str_utils import dict_to_string
+from wickit.utils.basic.string import dict_to_string
 from utils.config_enhancer import enhance_buffer_config, enhance_train_config, update_config
 from utils.parser_utils import create_json_parser, create_py_parser
 from utils.log import add_prefix_to_log, get_local_rank, log, shutdown_log

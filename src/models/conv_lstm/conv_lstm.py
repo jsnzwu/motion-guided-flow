@@ -1,6 +1,6 @@
 import torch.nn as nn
 import torch
-from utils.str_utils import dict_to_string 
+from wickit.utils.basic.string import dict_to_string 
 from utils.log import log
 
 class ConvLSTMCellV1(nn.Module):

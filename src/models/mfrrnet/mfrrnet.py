@@ -2,11 +2,16 @@ from __future__ import annotations
 from utils.log_tonemap_utils import inv_tonemap_func, tonemap_func
 from models.mfrrnet.common import ConvLSTMCellV6
 from utils.log import log
-from utils.str_utils import dict_to_string
-from models.model_base import ModelBaseEXT
-from utils.warp import get_merged_motion_vector_from_last, warp
+from wickit.utils.basic.string import dict_to_string
+from wickit.models.model_base import ModelBaseEXT
+from utils.config_adapter import DictToDataclassAdapter
+from wickit.utils.ext.warp import get_merged_motion_vector_from_last, warp
 from utils.buffer_utils import fix_dmdl_color_zero_value
 from utils.dataset_utils import create_de_color, DatasetGlobalConfig
+from utils.model_utils import get_1d_dim, get_2d_dim
+from utils.parser_utils import parse_buffer_name
+from wickit.utils.struct.struct_base import FlexDataStruct
+from wickit.utils.enums import ForwardMode
 from .loss.flow_loss import zero_flow_l1_loss, flow2_loss
 from models.general.common_structure import NetBase
 import copy
@@ -1199,6 +1204,9 @@ def get_dmdl_occ_mask(data):
 
 class MFRRNetModel(ModelBaseEXT):
     def __init__(self, config):
+        if isinstance(config, dict):
+            config = DictToDataclassAdapter(config).to_task_config()
+        config.model.unfreeze()
         super().__init__(config)
 
     def get_dummy_input(self, bs=1):
@@ -1206,10 +1214,28 @@ class MFRRNetModel(ModelBaseEXT):
         input_2d_str += self.config['input_buffer']
         input_2d_str += self.config['gbuffer_encoder']['input_buffer']
         input_1d_str = []
-        dump_input = super().get_dummy_input(input_2d_str, input_1d_str,bs)
+        H, W = self.dummy_input_size_h, self.dummy_input_size_w
+        ret = {}
+        for item in input_2d_str:
+            basic_element = parse_buffer_name(item)['basic_element']
+            if item.startswith('d2_'):
+                tmp_tensor = torch.zeros(bs, get_2d_dim(basic_element), H // 2, W // 2)
+            else:
+                tmp_tensor = torch.zeros(bs, get_2d_dim(basic_element), H, W)
+            ret[item] = tmp_tensor
+        for item in input_1d_str:
+            tmp_tensor = torch.zeros(bs, get_1d_dim(item))
+            ret[item] = tmp_tensor
+        ret['cur_data_index'] = 0
+        ret['metadata'] = {
+            'dataset_name': ['dummy_scene_name'],
+            'scene_name': ['scene_name'],
+            'index': [0],
+        }
+        ret['dummy_input'] = True
         if self.get_net().enable_recurrent_d2e:
-            dump_input['recurrent_d2e_he_id'] = -1
-        return dump_input
+            ret['recurrent_d2e_he_id'] = -1
+        return FlexDataStruct.from_dict(ret)
 
     def get_augment_data(self, data):
         return history_extend(data, self.trainer_config)
@@ -1248,7 +1274,7 @@ class MFRRNetModel(ModelBaseEXT):
         self.get_net().enable_timing = False  # type: ignore
         return output
 
-    def update(self, data, training=True):
+    def update(self, data, mode: ForwardMode=ForwardMode.train):
         buffer_config = self.trainer_config['buffer_config']
         max_luminance = buffer_config.get('max_luminance', -1)
         mu = buffer_config.get('mu', 8.0)
@@ -1285,4 +1311,3 @@ class MFRRNetModel(ModelBaseEXT):
             output['disc_mask'] = torch.where(data['continuity_mask'] > 0.5, torch.zeros_like(data['continuity_mask'], dtype=dtype, device=device),
                                               torch.ones_like(data['continuity_mask'], dtype=dtype, device=device))
         return output
-

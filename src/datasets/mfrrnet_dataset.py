@@ -9,7 +9,7 @@ from dataloaders.patch_loader import PatchLoader
 from utils.buffer_utils import create_flip_data
 import numpy as np
 from utils.log import get_local_rank, log
-from utils.str_utils import dict_to_string
+from wickit.utils.basic.string import dict_to_string
 
 start_offset = 0
 
@@ -31,6 +31,5 @@ class MFRRNetDataset(DatasetBase):
         for i, item in enumerate(datas):
             assert self.metadatas[index].get_offset(i).index == item['metadata']['index'] - start_offset
         return datas
-
 
 

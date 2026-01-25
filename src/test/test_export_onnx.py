@@ -9,10 +9,10 @@ import sys
 import includes.importer
 from utils.utils import create_dir, remove_all_in_dir, write_text_to_file
 from utils.warp import warp
-from utils.dataset_utils import data_to_device
+from wickit.utils.basic.tensor import data_to_device
 from utils.config_enhancer import enhance_train_config, initialize_recipe
-from dataloaders.raw_data_importer import tensor_as_type_str
-from utils.str_utils import dict_to_string
+from wickit.utils.basic.tensor import tensor_as_type_str
+from wickit.utils.basic.string import dict_to_string
 from utils.parser_utils import create_json_parser, create_py_parser
 from utils.log import add_prefix_to_log, log, shutdown_log
 from models.mfrrnet.mfrrnet import MFRRNetModel

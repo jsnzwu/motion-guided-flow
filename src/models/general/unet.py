@@ -5,7 +5,7 @@ from utils.utils import add_metaname
 from models.general.common_structure import Outputable, Inputable, NetBase, create_act_func, create_norm_func
 
 from utils.model_utils import calc_2d_dim
-from utils.str_utils import dict_to_string
+from wickit.utils.basic.string import dict_to_string
 from utils.log import log
 
 __space_holder__ = torch.tensor(0)

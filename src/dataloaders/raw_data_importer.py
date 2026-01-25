@@ -23,8 +23,10 @@ from utils.dataset_utils import compose_scene_color, create_dmdl_color_brdf, cre
     create_warped_buffer, get_continuity_mask, transform_direction, transform_direction_image, transform_position_image, write_npz, write_torch
 
 from utils.log import log
-from utils.str_utils import dict_to_string
-from utils.buffer_utils import aces_tonemapper, buffer_data_to_vis, buffer_raw_to_data, fix_dmdl_color_zero_value, read_buffer, tensor_as_type_str, write_buffer
+from wickit.utils.basic.string import dict_to_string
+from utils.buffer_utils import aces_tonemapper, buffer_data_to_vis, buffer_raw_to_data, fix_dmdl_color_zero_value
+from wickit.utils.basic.tensor import tensor_as_type_str
+from wickit.utils.io.imageio import read_image
 from utils.warp import get_merged_motion_vector_from_last, warp
 from .dataset_base import MetaData
 from utils.parser_utils import parse_buffer_name, parse_find_dict, parse_flat_dict
@@ -645,7 +647,7 @@ class UE4RawDataLoader:
             path = self.job_config['pattern'].format(
                 # directory, origin, ind+1, suffix)
                 directory, origin, ind, suffix)
-            buffer_data = read_buffer(path=path, channel=channel)
+            buffer_data = read_image(path=path, channel=channel)
 
             if torch.isinf(buffer_data).any() or torch.isnan(buffer_data).any():
                 log.warn(f'{"="*10 + "warning" + "="*10}\n there is inf or nan in "{path}"')
@@ -682,7 +684,7 @@ class UE4RawDataLoader:
 
     def export_patch_npz(self, metadata: MetaData):
         suffix = ""
-        scene = metadata.scene_name
+        scene = metadata.dataset_name
         index = metadata.index
         file_path_template = "{}/{}{}/{{}}/{{}}.{{}}".format(
             self.job_config['export_path'], scene, suffix)

@@ -6,7 +6,7 @@ from utils.config_enhancer import enhance_buffer_config
 from dataloaders.dataset_base import dispatch_task_by_metadata
 from dataloaders.raw_data_importer import UE4RawDataLoader
 from utils.log import log
-from utils.str_utils import dict_to_string
+from wickit.utils.basic.string import dict_to_string
 from config.config_utils import parse_config
 
 if __name__ == "__main__":
