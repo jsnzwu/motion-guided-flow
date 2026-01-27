@@ -28,15 +28,15 @@ src/
 
 ### Configuration System
 
-The project uses a configuration adapter pattern to convert YAML/config dict configurations to typed dataclasses:
+The project uses Wickit config utilities with an adapter to convert YAML/config dicts to typed dataclasses:
 
-- **`config/config_utils.py`**: Configuration loading utilities
+- **`wickit.config.config_utils`**: Configuration loading utilities (YAML + includes/pipeline/base)
 - **`utils/config_adapter.py`**: Dict-to-dataclass adapter (`DictToDataclassAdapter`)
 
 ### Data Loading Pipeline
 
 1. **`dataloaders/patch_loader.py`**: Main data loader with caching
-2. **`dataloaders/dataset_base.py`**: Dataset base class extending wickit
+2. **`dataloaders/dataset_base.py`**: Wickit dataset base (kept in sync; project-specific logic lives in `datasets/mfrrnet_dataset.py`)
 3. **`datasets/mfrrnet_dataset.py`**: MFRRNet-specific dataset
 
 ### Models
@@ -48,7 +48,7 @@ The project uses a configuration adapter pattern to convert YAML/config dict con
 ### Training
 
 - **`trainers/mfrrnet_runner.py`**: MFRRNet training runner extending wickit.Runner
-- **`trainers/trainer_base.py`**: Legacy trainer base (for compatibility)
+- **`trainers/fe_runner_base.py`**: Feature-extraction runner base extending wickit.Runner
 
 ## Type Annotation Guidelines
 

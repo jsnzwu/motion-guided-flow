@@ -1,4 +1,4 @@
-from utils.log import log
+from wickit.utils.log import log
 from wickit.datasets.metadata import MetaData, MetaDataWithPath
 from wickit.utils.basic.string import dict_to_string
 import time

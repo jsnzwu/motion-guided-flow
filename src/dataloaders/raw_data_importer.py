@@ -16,19 +16,19 @@ from utils.model_utils import get_2d_dim
 from utils.dataset_utils_ess import create_dmdl_color_ess
 # from utils.dataset_utils_ess import create_dmdl_color_ess
 from utils.utils import is_item_all_in_another, create_dir, del_dict_item, get_file_component, remove_all_in_dir, write_text_to_file
-from .dataset_base import dispatch_task_by_metadata, dispatch_task_by_part_name
-from utils.dataset_utils import compose_scene_color, create_dmdl_color_brdf, create_cross_sample, create_de_color, create_future_frame, \
-    create_history_frame, create_history_warped_buffer, create_history_warped_scene_color_cross, create_occlusion_mask, create_scene_color, \
-    create_scene_color_no_st, create_shadow_discontinuity_mask, create_sky_color, create_skybox_mask, create_st_color, \
-    create_warped_buffer, get_continuity_mask, transform_direction, transform_direction_image, transform_position_image, write_npz, write_torch
+from .metadata_task_utils import dispatch_task_by_metadata, dispatch_task_by_part_name
+from utils.dataset_utils import create_dmdl_color_brdf, create_de_color, create_future_frame, \
+    create_history_frame, create_history_warped_buffer, create_scene_color, \
+    create_scene_color_no_st, create_sky_color, create_skybox_mask, create_st_color, \
+    create_warped_buffer, get_continuity_mask, write_npz
 
-from utils.log import log
+from wickit.utils.log import log
 from wickit.utils.basic.string import dict_to_string
 from utils.buffer_utils import aces_tonemapper, buffer_data_to_vis, buffer_raw_to_data, fix_dmdl_color_zero_value
 from wickit.utils.basic.tensor import tensor_as_type_str
 from wickit.utils.io.imageio import read_image
-from utils.warp import get_merged_motion_vector_from_last, warp
-from .dataset_base import MetaData
+from wickit.utils.ext.warp import get_merged_motion_vector_from_last, warp
+from wickit.datasets.metadata import MetaData
 from utils.parser_utils import parse_buffer_name, parse_find_dict, parse_flat_dict
 
 
@@ -423,6 +423,7 @@ def compress_buffer(data: dict, data_type='fp16'):
 
 
 def merge_buffer(data: dict, buffer_names: List[str]) -> torch.Tensor:
+    # NOTE: Retained for project-specific tooling and future data pipeline extensions.
     merged_tensor = torch.cat([data[name] for name in buffer_names], dim=0)
     return merged_tensor
 
@@ -487,84 +488,11 @@ def get_extend_buffer(data: dict, part_name: str, buffer_config: dict, last_data
     return ret
 
 
-def dualize_engine_buffer(engine_buffer, post_fixes, exclusion_names=[]):
-    new_engine_buffer = {}
-    for k in engine_buffer.keys():
-        if k in exclusion_names:
-            continue
-        for pf in post_fixes:
-            new_engine_buffer[k + pf] = engine_buffer[k]
-    return new_engine_buffer
-
-
-def dualize_output_buffer(output_buffer, post_fixes, exclusion_names=[]):
-    new_output_buffer = {}
-    for k in output_buffer.keys():
-        if k in exclusion_names:
-            continue
-        for pf in post_fixes:
-            new_output_buffer[k + pf] = {
-                "origin": output_buffer[k]["origin"] + pf.upper(),
-                "channel": output_buffer[k]["channel"]
-            }
-    return new_output_buffer
-
-
-def dualize_buffer_list(buffer_list, post_fixes, exclusion_names=[]):
-    new_list = []
-    for item in buffer_list:
-        if item in exclusion_names:
-            continue
-        for pf in post_fixes:
-            new_list.append(item + pf)
-    return new_list
-
-
-def dualize_augmented_data_recipe(augmented_data_recipe, post_fixes, exclusion_names=[]):
-    new_recipe = {}
-    for k in augmented_data_recipe.keys():
-        if k in exclusion_names:
-            continue
-        for pf in post_fixes:
-            new_recipe[k + pf] = copy.deepcopy(augmented_data_recipe[k])
-            new_recipe[k + pf]["dep"] = dualize_buffer_list(
-                augmented_data_recipe[k]["dep"], post_fixes, exclusion_names=exclusion_names)
-            num_history = augmented_data_recipe[k].get("num_history", 0)
-            assert (num_history == len(
-                augmented_data_recipe[k].get('dep_history', [])))
-            for i in range(num_history):
-                new_recipe[k + pf]["dep_history"][i] = dualize_buffer_list(
-                    augmented_data_recipe[k]["dep_history"][i], post_fixes, exclusion_names=exclusion_names
-                )
-            # log.debug(new_recipe[k+pf])
-    return new_recipe
-
-
 def task_wrapper(ins, scene, start_index, end_index, file_index, idx):
+    # NOTE: Retained for project-specific tooling and future data pipeline extensions.
     log.debug("start wrapper {} {} {} {} {} {}".format(
         ins, scene, start_index, end_index, file_index, idx))
     ins.export_patch_range(scene, start_index, end_index, file_index, idx)
-
-
-def dualize_buffer_config(buffer_config):
-    exclusion_names = buffer_config['dual_exclusion']
-    buffer_config['engine_buffer'] = dualize_engine_buffer(
-        buffer_config['engine_buffer'], ["_L", "_R"], exclusion_names=exclusion_names)
-    buffer_config['output_buffer'] = dualize_output_buffer(
-        buffer_config['output_buffer'], ["_l", "_r"], exclusion_names=exclusion_names)
-    buffer_config['history_buffer'] = dualize_output_buffer(
-        buffer_config['history_buffer'], ["_l", "_r"], exclusion_names=exclusion_names)
-    buffer_config['augmented_data'] = dualize_buffer_list(
-        buffer_config['augmented_data'], ["_l", "_r"], exclusion_names=exclusion_names)
-    buffer_config['augmented_data_on_the_fly'] = dualize_buffer_list(
-        buffer_config['augmented_data_on_the_fly'], ["_l", "_r"], exclusion_names=exclusion_names)
-    buffer_config['augmented_data_recipe'] = dualize_augmented_data_recipe(
-        buffer_config['augmented_data_recipe'], ["_l", "_r"], exclusion_names=exclusion_names)
-    for part in buffer_config['addition_part']:
-        part['augmented_data'] = dualize_buffer_list(
-            part['augmented_data'], ["_l", "_r"], exclusion_names=exclusion_names)
-        part['buffer_name'] = dualize_buffer_list(
-            part['buffer_name'], ["_l", "_r"], exclusion_names=exclusion_names)
 
 
 class DatasetFormat(Enum):
@@ -586,9 +514,6 @@ class UE4RawDataLoader:
 
     def __init__(self, in_buffer_config, in_job_config):
         log.info("start UE4RawDataLoader init")
-        if in_buffer_config['dual']:
-            dualize_buffer_config(in_buffer_config)
-
         # log.debug(dict_to_string(in_job_config, "\njob_config"))
         # log.debug(dict_to_string(in_buffer_config, "\nbuffer_config"))
         self.job_config = in_job_config

@@ -1,6 +1,6 @@
 from models.general.unet import UNetDecoder, UNetEncoder, dual_conv
 from models.general.unet import single_conv
-from utils.log import log
+from wickit.utils.log import log
 from wickit.utils.basic.string import dict_to_string
 from models.general.common_structure import NetBase, create_act_func, create_norm_func
 import torch.nn as nn

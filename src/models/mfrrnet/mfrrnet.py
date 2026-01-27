@@ -1,7 +1,7 @@
 from __future__ import annotations
 from utils.log_tonemap_utils import inv_tonemap_func, tonemap_func
 from models.mfrrnet.common import ConvLSTMCellV6
-from utils.log import log
+from wickit.utils.log import log
 from wickit.utils.basic.string import dict_to_string
 from wickit.models.model_base import ModelBaseEXT
 from utils.config_adapter import DictToDataclassAdapter
@@ -15,7 +15,7 @@ from wickit.utils.enums import ForwardMode
 from .loss.flow_loss import zero_flow_l1_loss, flow2_loss
 from models.general.common_structure import NetBase
 import copy
-from dataloaders.dataset_base import DatasetBase
+from datasets.mfrrnet_dataset import MFRRNetDataset
 from utils.utils import TensorConcator, add_metaname
 from dataloaders.patch_loader import history_extend
 import torch.nn as nn
@@ -33,7 +33,7 @@ def fix_the_size_with(ref, res):
 
 def data_to_input(data, config, cat_axis=1):
     # data = copy.deepcopy(data)
-    data = DatasetBase.preprocess(data)
+    data = MFRRNetDataset.preprocess(data)
     ret = {}
     cats = []
     for name in config['gbuffer_encoder']['input_buffer']:
@@ -265,30 +265,30 @@ class MRFFNet(NetBase):
         self.layer_flow_channel = 2
         self.layer_mask_channel = 1
         self.config = config
-        self.gt_alias_name = self.config['gt_alias']
-        self.method = self.config['method']
-        self.arch = self.config['arch']
-        self.num_history_encoder = self.config['history_encoders']['num']
-        self.config['shade_decoder'] = self.config[f'shade_decoder__{self.method}']
-        self.num_shade_decoder_layer = len(self.config['shade_decoder']['struct']['decoder'])
+        self.gt_alias_name = self.config.gt_alias
+        self.method = self.config.method
+        self.arch = self.config.arch
+        self.num_history_encoder = self.config.history_encoders['num']
+        self.config.shade_decoder = self.config[f'shade_decoder__{self.method}']
+        self.num_shade_decoder_layer = len(self.config.shade_decoder['struct']['decoder'])
 
         ''' feature configuration '''
 
-        self.enable_demodulate = "demodulate" in self.config['feature']
-        self.enable_input_block = 'input_block' in self.config['feature']
-        self.enable_output_block = 'output_block' in self.config['feature']
+        self.enable_demodulate = "demodulate" in self.config.feature
+        self.enable_input_block = 'input_block' in self.config.feature
+        self.enable_output_block = 'output_block' in self.config.feature
 
-        self.enable_st = 'st' in self.config['feature']
+        self.enable_st = 'st' in self.config.feature
 
-        self.enable_st_feature_warp = "st_feature_warp" in self.config['feature']
-        self.enable_st_lmv_res = "st_lmv_res" in self.config['feature']
-        self.enable_st_lmv_res_cat = "st_lmv_res_cat" in self.config['feature']
+        self.enable_st_feature_warp = "st_feature_warp" in self.config.feature
+        self.enable_st_lmv_res = "st_lmv_res" in self.config.feature
+        self.enable_st_lmv_res_cat = "st_lmv_res_cat" in self.config.feature
         if self.enable_st_lmv_res_cat:
             assert self.enable_st_lmv_res_cat
-        self.enable_his_st_lmv_res = "his_st_lmv_res" in self.config['feature']
-        self.enable_his_st_lmv_res_cat = "his_st_lmv_res_cat" in self.config['feature']
-        self.enable_st_initial_by_rmv = 'st_initial_by_rmv' in self.config['feature']
-        self.enable_initial_by_rmv = 'initial_by_rmv' in self.config['feature']
+        self.enable_his_st_lmv_res = "his_st_lmv_res" in self.config.feature
+        self.enable_his_st_lmv_res_cat = "his_st_lmv_res_cat" in self.config.feature
+        self.enable_st_initial_by_rmv = 'st_initial_by_rmv' in self.config.feature
+        self.enable_initial_by_rmv = 'initial_by_rmv' in self.config.feature
 
         if self.enable_his_st_lmv_res_cat:
             assert self.enable_his_st_lmv_res
@@ -297,109 +297,109 @@ class MRFFNet(NetBase):
 
         # if self.enable_rmv_initial_layer_skip:
         #     self.enable_rmv_initial_layer_skip_at = self.config['feature_config']['rmv_initial_layer_skip_at']
-        self.enable_flow_residual_scale = "flow_residual_scale" in self.config['feature']
+        self.enable_flow_residual_scale = "flow_residual_scale" in self.config.feature
         if self.enable_flow_residual_scale:
-            self.flow_residual_scale = self.config['feature_config']['flow_residual_scale']
-        self.enable_lmv_res = "lmv_res" in self.config['feature']
-        self.enable_lmv_res_cat = "lmv_res_cat" in self.config['feature']
+            self.flow_residual_scale = self.config.feature_config['flow_residual_scale']
+        self.enable_lmv_res = "lmv_res" in self.config.feature
+        self.enable_lmv_res_cat = "lmv_res_cat" in self.config.feature
         if self.enable_lmv_res_cat:
             assert self.enable_lmv_res
-        self.enable_his_lmv_res = "his_lmv_res" in self.config['feature']
-        self.enable_his_lmv_res_cat = "his_lmv_res_cat" in self.config['feature']
+        self.enable_his_lmv_res = "his_lmv_res" in self.config.feature
+        self.enable_his_lmv_res_cat = "his_lmv_res_cat" in self.config.feature
         if self.enable_his_lmv_res_cat:
             assert self.enable_his_lmv_res
         if self.enable_his_lmv_res:
             self.enable_lmv_res
-        self.enable_feature_warp = "feature_warp" in self.config['feature']
+        self.enable_feature_warp = "feature_warp" in self.config.feature
         if self.enable_feature_warp:
             assert self.enable_his_lmv_res
-        self.enable_tmv_skip_conn = "tmv_skip_conn" in self.config['feature']
+        self.enable_tmv_skip_conn = "tmv_skip_conn" in self.config.feature
 
-        self.enable_rmv_fuse = "rmv_fuse" in self.config['feature']
+        self.enable_rmv_fuse = "rmv_fuse" in self.config.feature
         if self.enable_rmv_fuse:
-            self.rmv_fuse_id = self.config['feature_config']['rmv_fuse_id']
+            self.rmv_fuse_id = self.config.feature_config['rmv_fuse_id']
         if self.enable_rmv_fuse:
             assert self.enable_lmv_res
             if self.enable_feature_warp:
                 assert self.enable_his_lmv_res
 
-        self.enable_st_rmv_fuse = "st_rmv_fuse" in self.config['feature']
+        self.enable_st_rmv_fuse = "st_rmv_fuse" in self.config.feature
         if self.enable_st_rmv_fuse:
-            self.st_rmv_fuse_id = self.config['feature_config']['st_rmv_fuse_id']
+            self.st_rmv_fuse_id = self.config.feature_config['st_rmv_fuse_id']
         if self.enable_st_rmv_fuse:
             assert self.enable_st_lmv_res
             if self.enable_st_feature_warp:
                 assert self.enable_st_lmv_res
-        self.enable_single_encoding_split_st = "single_encoding_split_st" in self.config['feature']
+        self.enable_single_encoding_split_st = "single_encoding_split_st" in self.config.feature
         if self.enable_st_feature_warp:
             assert (self.enable_single_encoding_split_st) and (self.enable_his_st_lmv_res)
 
-        self.enable_recurrent_d2e = "recurrent_d2e" in self.config['feature']
-        self.enable_recurrent_d2e_layer_norm = "recurrent_d2e_layer_norm" in self.config['feature']
+        self.enable_recurrent_d2e = "recurrent_d2e" in self.config.feature
+        self.enable_recurrent_d2e_layer_norm = "recurrent_d2e_layer_norm" in self.config.feature
         ''' recurrent_d2e_st should be disabled, just for ablation test '''
-        self.enable_recurrent_d2e_decoding_split = "recurrent_d2e_decoding_split" in self.config['feature']
-        self.enable_recurrent_d2e_init_feature_he0 = "recurrent_d2e_init_feature_he0" in self.config['feature']
+        self.enable_recurrent_d2e_decoding_split = "recurrent_d2e_decoding_split" in self.config.feature
+        self.enable_recurrent_d2e_init_feature_he0 = "recurrent_d2e_init_feature_he0" in self.config.feature
         if self.enable_recurrent_d2e_decoding_split:
             assert self.enable_st_feature_warp
 
-        self.enable_zero_flow_loss = 'zero_flow' in self.config['loss']
-        self.enable_debug_output_clamp = 'output_clamp' in self.config['debug']
-        self.enable_debug_fake_feature_warp = 'fake_feature_warp' in self.config['debug']
-        self.enable_debug_pred_residual = 'pred_residual' in self.config['debug']
+        self.enable_zero_flow_loss = 'zero_flow' in self.config.loss
+        self.enable_debug_output_clamp = 'output_clamp' in self.config.debug
+        self.enable_debug_fake_feature_warp = 'fake_feature_warp' in self.config.debug
+        self.enable_debug_pred_residual = 'pred_residual' in self.config.debug
         self.enable_timing = False
 
-        self.feature_warp_mode = self.config['config'].get('feature_warp_mode', 'bilinear')
-        self.rmv_downsample_mode = self.config['config'].get('rmv_downsample_mode', 'nearest')
+        self.feature_warp_mode = self.config.config.get('feature_warp_mode', 'bilinear')
+        self.rmv_downsample_mode = self.config.config.get('rmv_downsample_mode', 'nearest')
         ''' lmv_warp_mode is for rmv warping by lmv '''
-        self.lmv_warp_mode = self.config['config'].get('lmv_warp_mode', 'nearest')
+        self.lmv_warp_mode = self.config.config.get('lmv_warp_mode', 'nearest')
         ''' tmv_warp_mode is for image warping '''
-        self.tmv_warp_mode = self.config['config'].get('tmv_warp_mode', 'bilinear')
+        self.tmv_warp_mode = self.config.config.get('tmv_warp_mode', 'bilinear')
 
         ''' output channel configuration '''
         if not self.enable_input_block:
-            del self.config['scene_color_encoder']['struct']['input']
-            del self.config['st_color_encoder']['struct']['input']
-            del self.config['gbuffer_encoder']['struct']['input']
+            del self.config.scene_color_encoder['struct']['input']
+            del self.config.st_color_encoder['struct']['input']
+            del self.config.gbuffer_encoder['struct']['input']
 
         ''' output channel configuration '''
         if not self.enable_output_block:
-            del self.config['shade_decoder']['struct']['output']
+            del self.config.shade_decoder['struct']['output']
             out_channel = int(self.enable_lmv_res) + \
                 int(self.enable_st_lmv_res)
-            self.config['shade_decoder']['out_channel'] = out_channel * 2
+            self.config.shade_decoder['out_channel'] = out_channel * 2
 
         ''' network name configuration '''
-        self.ge_pf = self.config['gbuffer_encoder']['output_prefix']
+        self.ge_pf = self.config.gbuffer_encoder['output_prefix']
         # self.sce_pf = self.config['scene_color_encoder_output_prefix']
-        self.he_pfs = [item for item in self.config['history_encoders']['output_prefixs']]
-        self.he_st_pfs = [item for item in self.config['history_st_encoders']['output_prefixs']]
+        self.he_pfs = [item for item in self.config.history_encoders['output_prefixs']]
+        self.he_st_pfs = [item for item in self.config.history_st_encoders['output_prefixs']]
 
-        self.he_mv_name = self.config['history_encoders']['mv_name']
-        self.he_st_mv_name = self.config['history_encoders']['st_mv_name']
-        self.he_ids = self.config['history_encoders']['history_id']
+        self.he_mv_name = self.config.history_encoders['mv_name']
+        self.he_st_mv_name = self.config.history_encoders['st_mv_name']
+        self.he_ids = self.config.history_encoders['history_id']
 
         ''' network import '''
         from models.mfrrnet.archs import ShadeNetDecoder, ShadeNetEncoder, DecoderBlock
 
-        if self.config['gbuffer_encoder']['class'] == 'ShadeNetEncoder':
-            self.gbuffer_encoder = ShadeNetEncoder(self.config['gbuffer_encoder'])
+        if self.config.gbuffer_encoder['class'] == 'ShadeNetEncoder':
+            self.gbuffer_encoder = ShadeNetEncoder(self.config.gbuffer_encoder)
         else:
-            raise Exception('Wrong class name {} for ShadeNetEncoder!'.format(self.config['gbuffer_encoder']['class']))
+            raise Exception('Wrong class name {} for ShadeNetEncoder!'.format(self.config.gbuffer_encoder['class']))
         # log.debug(dict_to_string([self.config['gbuffer_encoder'], self.gbuffer_encoder.in_channel]))
 
-        if self.config['scene_color_encoder']['class'] == 'ShadeNetEncoder':
-            self.config['scene_color_encoder']['gbuffer_channel'] = [channels[-1]
-                                                                     for channels in self.config['gbuffer_encoder']['struct']['encoder']]
-            self.scene_color_encoder = ShadeNetEncoder(self.config['scene_color_encoder'])
+        if self.config.scene_color_encoder['class'] == 'ShadeNetEncoder':
+            self.config.scene_color_encoder['gbuffer_channel'] = [channels[-1]
+                                                                     for channels in self.config.gbuffer_encoder['struct']['encoder']]
+            self.scene_color_encoder = ShadeNetEncoder(self.config.scene_color_encoder)
         else:
-            raise Exception('Wrong class name {} for ShadeNetEncoder!'.format(self.config['scene_color_encoder']['class']))
+            raise Exception('Wrong class name {} for ShadeNetEncoder!'.format(self.config.scene_color_encoder['class']))
         
         # log.debug(dict_to_string([self.config['scene_color_encoder'], self.scene_color_encoder.in_channel]))
 
         ''' accumulate concat channel of history_encoders '''
 
         skip_first_layer = self.enable_input_block
-        encoders_skip_channel = copy.deepcopy(self.config['gbuffer_encoder']['encoders_skip_channel'][skip_first_layer:])
+        encoders_skip_channel = copy.deepcopy(self.config.gbuffer_encoder['encoders_skip_channel'][skip_first_layer:])
         # log.debug(encoders_skip_channel)
         for i in range(len(encoders_skip_channel)):
             extra_channel = 0
@@ -425,13 +425,13 @@ class MRFFNet(NetBase):
                 # log.debug(f'layer={layer_id}, extra_cat_channel={extra_channel}, rmv_fused:{rmv_fused}, st_rmv_fuse:{st_rmv_fused}')
             extra_channel *= self.layer_flow_channel
             encoders_skip_channel[i] += extra_channel
-            encoders_skip_channel[i] += (self.config['scene_color_encoder']['encoders_skip_channel'][skip_first_layer:]
+            encoders_skip_channel[i] += (self.config.scene_color_encoder['encoders_skip_channel'][skip_first_layer:]
                                          [i]) * self.num_history_encoder
 
         # log.debug(dict_to_string(encoders_skip_channel))
         ''' add extra channel to the decoder layer in each pyramid'''
-        decoder_struct = self.config['shade_decoder']['struct']['decoder']
-        if self.config['shade_decoder']['enable_extra_channel']:
+        decoder_struct = self.config.shade_decoder['struct']['decoder']
+        if self.config.shade_decoder['enable_extra_channel']:
             # log.debug(dict_to_string(decoder_struct))
             for i in range(len(decoder_struct)):
                 extra_channel = 0
@@ -449,11 +449,11 @@ class MRFFNet(NetBase):
 
             # log.debug(dict_to_string(decoder_struct))
 
-        self.config['shade_decoder']['encoders_skip_channel'] = encoders_skip_channel
-        self.config['shade_decoder']['num_he'] = self.num_history_encoder
+        self.config.shade_decoder['encoders_skip_channel'] = encoders_skip_channel
+        self.config.shade_decoder['num_he'] = self.num_history_encoder
         
-        if self.config['shade_decoder']['class'] == 'ShadeNetDecoder':
-            self.shade_decoder = ShadeNetDecoder(self.config['shade_decoder'], DecoderBlock)
+        if self.config.shade_decoder['class'] == 'ShadeNetDecoder':
+            self.shade_decoder = ShadeNetDecoder(self.config.shade_decoder, DecoderBlock)
         else:
             raise Exception('Wrong class name {} for ShadeNetDecoder!'.format(self.config['shade_decoder']))
 

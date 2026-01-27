@@ -16,10 +16,10 @@ from utils.buffer_utils import (
 from utils.config_adapter import DictToDataclassAdapter, TaskConfig
 from utils.dataset_utils import DatasetGlobalConfig
 from wickit.utils.basic.tensor import align_channel_buffer, data_as_type, data_to_device
-from utils.log import log
+from wickit.utils.log import log
 from utils.loss_utils import lpips, psnr, ssim
-from trainers.fe_trainer_base import get_his_recurrent_list
-from dataloaders.dataset_base import create_meta_data_list
+from trainers.fe_runner_base import get_his_recurrent_list
+from dataloaders.metadata_task_utils import create_meta_data_list
 from dataloaders.patch_loader import PatchLoader
 from datasets.mfrrnet_dataset import MFRRNetDataset
 
@@ -73,17 +73,6 @@ class MFRRNetRunner(Runner):
                 self.last_output = []
             self.load_data(item, mode)
             self.update_one_batch(epoch_index=epoch_index, batch_index=batch_index, mode=mode)
-
-    def setup_model(self):
-        if self.model is None:
-            raise RuntimeError("model must be set before setup_model")
-        self.net = self.model.get_net()
-
-    def setup_optimizers(self):
-        self.create_optimizer()
-
-    def setup_lr_schedulers(self):
-        self.create_scheduler()
 
     def get_dataset_metadatas(self) -> None:
         if not self.config.dataset.enable:

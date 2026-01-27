@@ -4,7 +4,6 @@ include_name: buffer_config
 include: [includes/dataset_augmented_data_recipe_2025.yaml]
 demodulation: true
 demodulation_mode: "brdf"
-dual: false
 scale_regex: 
   ds_scale:
     enable: false
@@ -65,9 +64,6 @@ augmented_data_on_the_fly: [
     # "skybox_mask",
     # "scene_light_no_st",
     # "st_color",
-]
-dual_exclusion: [
-    "light__directional_light_camera_direction",
 ]
 crop_config: {
     "enable": False,

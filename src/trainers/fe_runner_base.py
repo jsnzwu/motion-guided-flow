@@ -1,11 +1,11 @@
-from wickit.utils.log import configure_logging, log
+from wickit.utils.log import configure_logging
 import numpy as np
 import torch
 from wickit.utils.basic.string import dict_to_string
 from utils.buffer_utils import create_flip_data
 from utils.dataset_utils import DatasetGlobalConfig
 from wickit.utils.basic.tensor import data_as_type, data_to_device
-from trainers.trainer_base import TrainerBase
+from wickit.runner import Runner
 
 configure_logging()
 ''' create feature_0 and encoding_0 '''
@@ -20,10 +20,11 @@ def get_his_recurrent_list(cur_data_index, num_he, block_size=0):
     else:
         return [((cur_data_index - he_id) % block_size != 0) for he_id in range(num_he)]
 
-class FETrainerBase(TrainerBase):
+class FERunnerBase(Runner):
 
     def __init__(self, config, model, resume=False):
         super().__init__(config, model, resume)
+        self.use_cuda = self.device_context.use_gpu
         self.cur_data_index = -1
         self.output_buffer = []
         self.loss_buffer = []
@@ -71,8 +72,8 @@ class FETrainerBase(TrainerBase):
     def load_data(self, data, mode="test"):
         self.cur_data['cur_data_index'] = self.cur_data_index
         if self.use_cuda:
-            self.cur_data: dict = data_to_device(data, self.config['device'], non_blocking=True)  # type: ignore
-        if mode == 'train' and self.config['dataset']['flip'] and self.config['dataset']['is_block_part']:
+            self.cur_data: dict = data_to_device(data, self.config.runtime.device, non_blocking=True)  # type: ignore
+        if mode == 'train' and self.config.dataset.flip and self.config.dataset.is_block_part:
             assert 'vertical_flip' not in self.cur_data['metadata'].keys()  # type: ignore
             self.cur_data = self.flip_data(self.cur_data)
         self.set_recurrent_data(mode=mode)
@@ -81,7 +82,7 @@ class FETrainerBase(TrainerBase):
         elif mode == 'test':
             self.cur_data = data_as_type(self.cur_data, self.dataset_test_precision_mode)
         # log.debug(dict_to_string(self.cur_data))
-        if not self.config['dataset']['augment_loader']:
+        if not self.config.dataset.augment_loader:
             self.cur_data = self.model.get_augment_data(self.cur_data)
         # log.debug(dict_to_string(self.cur_data))
         self.apply_max_luminance(self.cur_data)
@@ -107,7 +108,7 @@ class FETrainerBase(TrainerBase):
 
     def get_block_size(self, mode) -> int:
            # log.debug(dict_to_string(self.config['trainer']))
-        block_cfg = self.config['trainer'][f'recurrent_{mode}']['block_size']
+        block_cfg = self.config.trainer[f'recurrent_{mode}']['block_size']
         flag = False
         for stage in block_cfg:
             cur_epoch_index = self.epoch_index

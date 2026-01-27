@@ -20,9 +20,8 @@ from utils.buffer_utils import to_numpy
 from wickit.utils.basic.tensor import to_torch
 from utils.flow_vis import flow_to_image
 from utils.buffer_utils import flow_to_motion_vector
-from utils.parser_utils import create_py_parser
 from models.loss.loss import LossFunction, ssim_per_pixel
-from dataloaders.dataset_base import MetaData
+from wickit.datasets.metadata import MetaData
 from dataloaders.raw_data_importer import UE4RawDataLoader, get_augmented_buffer
 from utils.dataset_utils import create_de_color
 from utils.utils import del_dict_item
@@ -34,7 +33,7 @@ from utils.dataset_utils import resize
 from utils.dataset_utils import create_warped_buffer
 from trainers.mfrrnet_trainer import MFRRNetTrainer
 import torch.distributed as dist
-from utils.warp import warp
+from wickit.utils.ext.warp import warp
 from utils.utils import write_text_to_file
 from models.mfrrnet.mfrrnet import MFRRNetModel
 from wickit.utils.basic.tensor import align_channel_buffer
@@ -42,11 +41,12 @@ from wickit.utils.io.imageio import write_image
 from utils.utils import Accumulator
 from utils.utils import del_data
 from dataloaders.patch_loader import PatchLoader
-from config.config_utils import parse_config
+from wickit.config.config_utils import parse_config_to_dict
+from utils.config_adapter import dict_to_config
 from wickit.utils.basic.string import dict_to_string
-from utils.log import log
+from wickit.utils.log import log
 from utils.buffer_utils import log_tonemapper
-from utils.warp import warp
+from wickit.utils.ext.warp import warp
 import cv2
 import numpy as np
 from matplotlib import pyplot as plt
@@ -247,12 +247,16 @@ def inference():
             index += 1
 
 def update_inference_config(config):
-    config['_input_config'] = copy.deepcopy(config)
+    if hasattr(config, "unfreeze") and getattr(config, "_frozen", False):
+        config.unfreeze()
+    if hasattr(config, "_allow_new_keys"):
+        object.__setattr__(config, "_allow_new_keys", True)
+    config._input_config = copy.deepcopy(config.to_dict() if hasattr(config, "to_dict") else config)
     update_config(config)
-    config['local_rank'] = 0
-    config['use_ddp'] = False
-    config["use_cuda"] = config['num_gpu'] > 0
-    config['device'] = "cuda:0" if config["use_cuda"] else "cpu"
+    config.runtime.local_rank = 0
+    config.runtime.use_ddp = False
+    config.runtime.use_gpu = config.trainer.num_gpu > 0
+    config.runtime.device = "cuda:0" if config.runtime.use_gpu else "cpu"
 
 
 if __name__ == '__main__':
@@ -282,7 +286,7 @@ if __name__ == '__main__':
 
     metric = ['psnr', 'ssim', 'lpips']
     if mode == "moflow":
-        dataset_cfg = parse_config("config/dataset/infer_dataset_v6_moflow_ess.yaml")
+        dataset_cfg = dict_to_config(parse_config_to_dict("config/dataset/infer_dataset_v6_moflow_ess.yaml", root_path=""))
         if args.config:
             config_path = [args.config]
         else:
@@ -294,6 +298,17 @@ if __name__ == '__main__':
     else:
         raise NotImplementedError(f"{mode} is not supported (list: moflow)")
 
+    config_path = [os.path.normpath(path.replace("\\", os.sep)) for path in config_path]
+
+    if hasattr(dataset_cfg, "unfreeze") and getattr(dataset_cfg, "_frozen", False):
+        dataset_cfg.unfreeze()
+    if hasattr(dataset_cfg, "_allow_new_keys"):
+        object.__setattr__(dataset_cfg, "_allow_new_keys", True)
+    if hasattr(dataset_cfg, "dataset") and hasattr(dataset_cfg.dataset, "unfreeze") and getattr(dataset_cfg.dataset, "_frozen", False):
+        dataset_cfg.dataset.unfreeze()
+    if hasattr(dataset_cfg, "dataset") and hasattr(dataset_cfg.dataset, "_allow_new_keys"):
+        object.__setattr__(dataset_cfg.dataset, "_allow_new_keys", True)
+
     scene_name = cmd_scene.split("_")[0] + "_T"
     path_alias = scene_name
     inference_name = cmd_scene
@@ -301,19 +316,19 @@ if __name__ == '__main__':
 
     global_start = frame_idx - 8
     global_end = frame_idx + 8
-    dataset_cfg['dataset']['train_scene'] = [
+    dataset_cfg.dataset.train_scene = [
         {"name": f"{scene_name}/{inference_name}_720", "config": {"indice": [], "path_alias": path_alias}},
     ]
     if export_image:
-        dataset_cfg['dataset']['test_scene'] = [
+        dataset_cfg.dataset.test_scene = [
             {"name": f"{scene_name}/{inference_name}_720",
                 "config": {"indice": [global_start-1, global_end+1], "path_alias": path_alias}},
         ]
     else:
-        dataset_cfg['dataset']['test_scene'] = [
+        dataset_cfg.dataset.test_scene = [
             {"name": f"{scene_name}/{inference_name}_720", "config": {"indice": [], "path_alias": path_alias}},
         ]
-    log.debug(dict_to_string(dataset_cfg['dataset']['test_scene']))
+    log.debug(dict_to_string(dataset_cfg.dataset.test_scene))
     update_inference_config(dataset_cfg)
     enhance_train_config(dataset_cfg)
     if export_image:
@@ -326,8 +341,8 @@ if __name__ == '__main__':
     # dataset_cfg['dataset']['train_scene'] = [
     #     {"name":"FC/FC_04", "config":{"indice":[]}},
     # ]
-    dataset_cfg['log_to_file'] = False
-    dataset_trainer = eval(dataset_cfg['trainer']['class'])(
+    dataset_cfg.log_to_file = False
+    dataset_trainer = eval(dataset_cfg.trainer.type)(
         dataset_cfg, None, resume=False)
     dataset_trainer.prepare('test')
     dataset_trainer.create_test_dataset(0)
@@ -349,17 +364,19 @@ if __name__ == '__main__':
     else:
         block_sizes = [block_size for _ in range(num_cfg)]
     for i in range(len(config_path)):
-        tmp_config = parse_config(config_path[i], root_path="")
-        # log.debug(dict_to_string(tmp_config['model']['input_buffer']))
+        tmp_config = dict_to_config(parse_config_to_dict(config_path[i], root_path=""))
+        # log.debug(dict_to_string(tmp_config.model.input_buffer))
         update_inference_config(tmp_config)
         enhance_train_config(tmp_config)
         configs.append(tmp_config)
         config_train = copy.deepcopy(tmp_config)
-        config_train['model']['input_buffer'] = dataset_cfg['model']['input_buffer']
-        config_train['dataset']['enable'] = False
-        config_train['initial_inference'] = False
+        if hasattr(config_train, "unfreeze") and getattr(config_train, "_frozen", False):
+            config_train.unfreeze()
+        config_train.model.input_buffer = dataset_cfg.model.input_buffer
+        config_train.dataset.enable = False
+        config_train.initial_inference = False
         # log.debug(dict_to_string(dataset_cfg['model']['input_buffer']))
-        tmp_model = eval(config_train['model']['class'])(config_train)
+        tmp_model = eval(config_train.model.type)(config_train)
 
         def print_model_weights_dtype(model):
             for name, param in model.named_parameters():
@@ -370,43 +387,43 @@ if __name__ == '__main__':
         # resume = True
         # if mode == "interp" or mode == "extrap":
         resume = False
-        config_train['log_to_file'] = False
-        tmp_trainer = eval(config_train['trainer']['class'])(
+        config_train.log_to_file = False
+        tmp_trainer = eval(config_train.trainer.type)(
             config_train, tmp_model, resume=resume)
         tmp_trainer.prepare("test")
-        tmp_trainer.config['vars'] = {}
-        tmp_trainer.config['vars']['skip_pred'] = False
-        tmp_trainer.config['vars']['skip_pred'] = block_sizes[i] > 1
-        tmp_trainer.config['vars']['block_size'] = block_sizes[i]
-        tmp_trainer.config['trainer']['recurrent_test'] = {
+        tmp_trainer.config.vars = {}
+        tmp_trainer.config.vars['skip_pred'] = False
+        tmp_trainer.config.vars['skip_pred'] = block_sizes[i] > 1
+        tmp_trainer.config.vars['block_size'] = block_sizes[i]
+        tmp_trainer.config.trainer.recurrent_test = {
             "block_size": [
                 {'start': 0, 'end': 1, 'value': block_sizes[i], 'ratio': True},
             ]
         }
         for item in metric:
-            tmp_trainer.config['vars'][f"{item}_acc"] = Accumulator()
+            tmp_trainer.config.vars[f"{item}_acc"] = Accumulator()
             for j in range(block_sizes[i]):
-                tmp_trainer.config['vars'][f"{item}_{j}_acc"] = Accumulator()
-        tmp_trainer.config['write_path'] = write_path + \
-            f"{inference_name}/{tmp_trainer.config['model']['model_name']}_{str(block_sizes[i])}/"
-        tmp_trainer.config['vars']['writer'] = SummaryWriter(log_dir=tmp_trainer.config['write_path'])
-        tmp_trainer.config['vars']['step_log_file'] = f"{tmp_trainer.config['write_path']}/step.log"
-        tmp_trainer.config['vars']['epoch_log_file'] = f"{tmp_trainer.config['write_path']}/epoch.log"
+                tmp_trainer.config.vars[f"{item}_{j}_acc"] = Accumulator()
+        tmp_trainer.config.write_path = write_path + \
+            f"{inference_name}/{tmp_trainer.config.model.model_name}_{str(block_sizes[i])}/"
+        tmp_trainer.config.vars['writer'] = SummaryWriter(log_dir=tmp_trainer.config.write_path)
+        tmp_trainer.config.vars['step_log_file'] = f"{tmp_trainer.config.write_path}/step.log"
+        tmp_trainer.config.vars['epoch_log_file'] = f"{tmp_trainer.config.write_path}/epoch.log"
 
         tmp_trainer.last_output = []
-        create_dir(tmp_trainer.config['write_path'])
-        remove_all_in_dir(tmp_trainer.config['write_path'])
+        create_dir(tmp_trainer.config.write_path)
+        remove_all_in_dir(tmp_trainer.config.write_path)
         trainers.append(tmp_trainer)
         render_targets.append(None)
 
     require_list = get_input_filter_list({
         'input_config': dataset_cfg,
-        'input_buffer': dataset_cfg['model']['require_data']
+        'input_buffer': dataset_cfg.model.require_data
     })
     loader = PatchLoader(
-        dataset_cfg['dataset']['path'],
-        job_config={'export_path': dataset_cfg['dataset']['path'], 'dataset_format': 'npz'},
-        buffer_config=dataset_cfg['buffer_config'],
+        dataset_cfg.dataset.path,
+        job_config={'export_path': dataset_cfg.dataset.path, 'dataset_format': 'npz'},
+        buffer_config=dataset_cfg.buffer_config,
         require_list=require_list)
 
     with torch.no_grad():

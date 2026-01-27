@@ -1,14 +1,7 @@
 import os
 import re
 import shutil
-import matplotlib.pyplot as plt
 import torch
-import numpy as np
-from utils.log import log
-
-def inline_assert(cond, msg=""):
-    assert cond, msg
-    return cond
 
 cached_cat_shape = {}
 class TensorConcator:
@@ -205,14 +198,6 @@ def write_text_to_file(path, output, mode="w", mkdir=False):
     f.close()
 
 
-def add_at_dict_front(d, key, value):
-    new_d = {}
-    new_d[key] = value
-    for k in d.keys():
-        new_d[k] = d[k]
-    return new_d
-
-
 def remove_all_in_dir(path, file_name=None):
     if not (os.path.exists(path)):
         return
@@ -264,12 +249,6 @@ def is_item_all_in_another(test_arr, another):
     return True, None
 
 
-def deal_with_module(module, act="relu"):
-    torch.nn.init.kaiming_uniform_(
-        module.weight, nonlinearity=act)
-    module.bias.data.fill_(0)
-
-
 def get_tensor_mean_min_max(t):
     # fp16 will always output nan when using nanmean
     if t.numel() == 0:
@@ -282,14 +261,3 @@ def get_tensor_mean_min_max(t):
 
 def get_tensor_mean_min_max_str(t, name="", mode="f"):
     return "{{}}: {{:.3{}}} {{:.3{}}} {{:.3{}}}".format(mode, mode, mode).format(name, *get_tensor_mean_min_max(t))
-
-
-def show(img):
-    plt.imshow(img)
-    plt.show()
-
-
-def to_img(arr):
-    data = arr.permute(1, 2, 0)
-    img = (data.detach().cpu().numpy() * 255.0).astype(np.uint8)
-    return img

@@ -1,9 +1,9 @@
 import torch
 import torch.nn.functional as F
-from utils.warp import warp
+from wickit.utils.ext.warp import warp
 from utils.dataset_utils import DatasetGlobalConfig
 from utils.buffer_utils import inv_ldr_log_tonemapper, inv_log_tonemapper, ldr_log_tonemapper, log_tonemapper
-from utils.log import log
+from wickit.utils.log import log
 from wickit.utils.basic.string import dict_to_string
 
 

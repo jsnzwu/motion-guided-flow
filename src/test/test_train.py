@@ -21,9 +21,9 @@ def find_free_port():
 
 
 if __name__ == "__main__":
-    from utils.parser_utils import create_py_parser
-    from config.config_utils import create_config, parse_config, convert_to_dict
-    from utils.log import log
+    from wickit.config.config_utils import parse_config_to_dict
+    from utils.config_adapter import dict_to_config
+    from wickit.utils.log import log
     from wickit.utils.basic.string import dict_to_string
     parser = argparse.ArgumentParser(description="trainer")
     parser.add_argument("--config", help="trainer config file path")
@@ -33,18 +33,17 @@ if __name__ == "__main__":
     parser.add_argument('--test', action='store_true', default=False)
     parser.add_argument('--test_only', action='store_true', default=False)
     parser.add_argument('--multi', action='store_true', default=False)
-    # parser.add_argument('--yacs', action='store_true', default=False)
     args = parser.parse_args()
     config_file = args.config
 
     program = 'src/test/test_trainer.py'
-    config = parse_config(config_file, root_path="")
-    num_gpu = config['num_gpu']
+    config = dict_to_config(parse_config_to_dict(config_file, root_path=""))
+    num_gpu = config.trainer.num_gpu
     port = find_free_port()
 
     # os.environ['CUDA_VISIBLE_DEVICES'] = config['cuda_visible_devices']
     prefix = ""
-    type_input = str(config['cuda_visible_devices'])
+    type_input = str(config.runtime.cuda_visible_devices)
     type_input = type_input.replace(" ", "").replace("(", "").replace(")", "").replace("\\", "")
     os.environ['CUDA_VISIBLE_DEVICES'] = type_input
     os.environ['MKL_NUM_THREADS'] = '1'

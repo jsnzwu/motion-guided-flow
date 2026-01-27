@@ -8,15 +8,15 @@ import os
 import sys
 import includes.importer
 from utils.utils import create_dir, remove_all_in_dir, write_text_to_file
-from utils.warp import warp
+from wickit.utils.ext.warp import warp
 from wickit.utils.basic.tensor import data_to_device
 from utils.config_enhancer import enhance_train_config, initialize_recipe
 from wickit.utils.basic.tensor import tensor_as_type_str
 from wickit.utils.basic.string import dict_to_string
-from utils.parser_utils import create_json_parser, create_py_parser
-from utils.log import add_prefix_to_log, log, shutdown_log
+from wickit.utils.log import add_prefix_to_log, log, shutdown_log
 from models.mfrrnet.mfrrnet import MFRRNetModel
-from config.config_utils import parse_config
+from wickit.config.config_utils import parse_config_to_dict
+from utils.config_adapter import dict_to_config
 
 def convert_onnx(model, patch_loader=None):
     # model.set_eval()
@@ -68,40 +68,32 @@ def convert_onnx(model, patch_loader=None):
     onnx.save(model_simp, f"{export_path}/{model.model_name}_sim.onnx")
     
 def update_config(config):
-    config['use_ddp'] = config['num_gpu'] > 1
-    config["use_cuda"] = config['num_gpu'] > 0
-    config['device'] = "cuda:0" if config["use_cuda"] else "cpu"
-    assert config['train_parameter']['batch_size'] % max(config['num_gpu'], 1) == 0
-    config['train_parameter']['batch_size'] = config['train_parameter']['batch_size'] // max(config['num_gpu'], 1)
-    assert config['dataset']['train_num_worker_sum'] % max(config['num_gpu'], 1) == 0
-    config['dataset']['train_num_worker'] = config['dataset']['train_num_worker_sum'] // max(config['num_gpu'], 1)
+    if hasattr(config, "unfreeze") and getattr(config, "_frozen", False):
+        config.unfreeze()
+    num_gpu = config.trainer.num_gpu
+    config.runtime.use_ddp = num_gpu > 1
+    config.runtime.use_gpu = num_gpu > 0
+    config.runtime.device = "cuda:0" if config.runtime.use_gpu else "cpu"
+    assert config.train_parameter.batch_size % max(num_gpu, 1) == 0
+    config.train_parameter.batch_size = config.train_parameter.batch_size // max(num_gpu, 1)
+    assert config.dataset.train_num_worker_sum % max(num_gpu, 1) == 0
+    config.dataset.train_num_worker = config.dataset.train_num_worker_sum // max(num_gpu, 1)
     
-def BN_convert_float(module):
-    """
-    Utility function for network_to_half().
-    Retained for legacy purposes.
-    """
-    if isinstance(module, torch.nn.modules.batchnorm._BatchNorm) and module.affine is True:
-        module.float()
-    for child in module.children():
-        BN_convert_float(child)
-    return module
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="trainer")
     parser.add_argument("--config", help="trainer config file path")
     args = parser.parse_args()
     
-    config = parse_config(args.config, root_path="")
+    config = dict_to_config(parse_config_to_dict(args.config, root_path=""))
     update_config(config)
     enhance_train_config(config)
     
     config_onnx = deepcopy(config)
-    config_onnx["model"]["export_onnx"] = True
+    config_onnx.model.export_onnx = True
     ''' important for export onnx in fp16 !! '''
-    config_onnx["model"]["inference_precision"] = "fp16"
+    config_onnx.model.inference_precision = "fp16"
     # config_onnx["inital_inference"] = False
-    model = eval(config_onnx['model']['class'])(config_onnx)
+    model = eval(config_onnx.model.type)(config_onnx)
     # import cProfile
     # cProfile.run("model = eval(config_onnx['model']['class'])(config_onnx)", filename=f"profile.out", sort="cumulative")
     # model = TestNet().cuda()

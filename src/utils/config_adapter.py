@@ -1,6 +1,6 @@
 import copy
 from dataclasses import dataclass, field, fields
-from typing import Any
+from typing import Any, Dict, Optional
 
 from wickit.config.components import (
     DatasetConfig as WickitDatasetConfig,
@@ -15,16 +15,22 @@ from wickit.config.components import (
     TrainerConfig as WickitTrainerConfig,
 )
 from wickit.logging.config import LoggingConfig
-
-try:
-    from yacs.config import CfgNode
-except Exception:  # pragma: no cover - optional dependency
-    CfgNode = None
+from wickit.utils.struct.struct_base import StructBase
 
 
 @dataclass
 class DatasetConfig(WickitDatasetConfig):
     _allow_new_keys = True
+
+
+@dataclass
+class BufferConfig(DatasetConfig):
+    max_luminance: float = 1.0
+    min_luminance: float = 0.0
+    scale_regex: Dict[str, Any] = field(default_factory=dict)
+    augmented_data_recipe: Optional[str] = None
+    history_config: Optional[Dict[str, Any]] = None
+    _allow_new_keys: bool = True
 
 
 @dataclass
@@ -50,6 +56,7 @@ class TaskConfig(WickitTaskConfig):
     model: ModelConfig = field(default_factory=ModelConfig)
     job_config: JobConfig = field(default_factory=JobConfig)
     exp_name: str = ""
+    log_to_file: bool = True
 
 
 def _cfg_node_to_dict(cfg_node: Any) -> dict:
@@ -57,12 +64,11 @@ def _cfg_node_to_dict(cfg_node: Any) -> dict:
         return [_cfg_node_to_dict(item) for item in cfg_node]
     if isinstance(cfg_node, tuple):
         return tuple(_cfg_node_to_dict(item) for item in cfg_node)
-    if CfgNode is None or not isinstance(cfg_node, CfgNode):
-        return cfg_node
-    cfg_dict = dict(cfg_node)
-    for key, value in cfg_dict.items():
-        cfg_dict[key] = _cfg_node_to_dict(value)
-    return cfg_dict
+    if isinstance(cfg_node, StructBase):
+        return cfg_node.to_dict()
+    if isinstance(cfg_node, dict):
+        return {key: _cfg_node_to_dict(value) for key, value in cfg_node.items()}
+    return cfg_node
 
 
 def _filter_dataclass_fields(data: dict, cls: type) -> dict:
@@ -199,6 +205,7 @@ def dict_to_config(config: dict) -> TaskConfig:
         "include_name": config.get("include_name"),
         "args": config.get("args", {}),
         "log": config.get("log", {}),
+        "log_to_file": bool(config.get("log_to_file", True)),
         "logging": _build_logging_config(config),
         "loss": _build_loss_config(config),
         "job_config": _build_job_config(config),

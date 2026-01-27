@@ -6,7 +6,7 @@ from models.general.common_structure import Outputable, Inputable, NetBase, crea
 
 from utils.model_utils import calc_2d_dim
 from wickit.utils.basic.string import dict_to_string
-from utils.log import log
+from wickit.utils.log import log
 
 __space_holder__ = torch.tensor(0)
 

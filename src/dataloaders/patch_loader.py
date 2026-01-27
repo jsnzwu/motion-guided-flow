@@ -14,23 +14,18 @@ import gc
 from utils.utils import del_dict_item, write_text_to_file
 from utils.utils import create_dir, get_file_component
 from .raw_data_importer import DatasetFormat, compress_buffer, get_augmented_buffer, get_extend_buffer, parse_buffer_name, split_buffer
-from .raw_data_importer import dualize_buffer_list
-from .raw_data_importer import dualize_buffer_config
 from utils.dataset_utils import write_npz
 from wickit.utils.basic.tensor import data_as_type, data_to_device
-from .dataset_base import MetaData, create_metadata_by_glob
+from wickit.datasets.metadata import MetaData
+from .metadata_task_utils import create_metadata_by_glob
 import numpy as np
 from .raw_data_importer import UE4RawDataLoader
-from utils.model_utils import min_max_scalar
 from tqdm import tqdm
 from wickit.utils.basic.string import dict_to_string
-from utils.log import log
+from wickit.utils.log import log
 import multiprocessing as mp
 from utils.buffer_utils import aces_tonemapper
 from utils.dataset_utils import create_warped_buffer
-
-def mix(a,b,t):
-    return a*(1-t)+b*t
 
 g_augmented_data_output = None
 def history_extend(data, config):
@@ -150,9 +145,6 @@ class PatchLoader(PatchLoaderBase):
     def __init__(self, data_part, buffer_config={}, cache_size = 4,
                  job_config={}, require_list=[], augmented_data_output=None, with_augment=True):
         super(PatchLoader, self).__init__()
-        if buffer_config['dual']:
-            dualize_buffer_config(buffer_config)
-
         self.job_config = job_config
         self.dataset_format = DatasetFormat.get_by_str(job_config['dataset_format'])
         self.export_path = self.job_config['export_path']
@@ -167,10 +159,6 @@ class PatchLoader(PatchLoaderBase):
         self.__debug_cache_part_miss = 0
         self.with_augment = with_augment
         self.cache_size = cache_size
-        if self.buffer_config['dual']:
-            self.require_list = dualize_buffer_list(self.require_list, post_fixes=[
-                "_l", "_r"], exclusion_names=self.buffer_config['dual_exclusion'])
-
         ''' always False'''
         # self.gpu = True
         self.gpu = False
@@ -497,9 +485,6 @@ class PatchLoader(PatchLoaderBase):
             cur_key = str(metadata.get_offset(-i - 1))
             if cur_key not in self.last_data.keys():
                 data = self.load_data(metadata.get_offset(-i - 1), data_type=torch.float32)
-                if buffer_config['dual']:
-                    augmented_list = dualize_buffer_list(augmented_list, post_fixes=[
-                        '_l', '_r'], exclusion_names=[])
                 # log.debug(dict_to_string(data))
                 # log.debug(augmented_output)
                 if len(augmented_list) > 0:

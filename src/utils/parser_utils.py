@@ -1,10 +1,4 @@
-import copy
-import json
-import argparse
-import os
 import re
-from wickit.utils.basic.string import dict_to_string
-from utils.log import log
 import numpy as np
 import torch
 
@@ -41,54 +35,6 @@ def parse_buffer_name(key_augmented) -> dict:
             "{} is not passed for get_augmented_buffer pre-check.".format(key_augmented))
     # log.debug(f'"{pref}" "{buffer_name}" "{his_id}" "{postf}"')
     return ret
-
-
-def create_json_parser(file_name):
-    if not (os.path.exists(file_name)):
-        return {}
-    baseConfigFile = open(file_name, "r")
-    content = baseConfigFile.readlines()
-    content = "".join([s.strip() for s in content])
-    configDict = json.loads(content)
-    baseConfigFile.close()
-    return configDict
-
-
-def create_py_parser(file_name):
-    if not (os.path.exists(file_name)):
-        raise FileNotFoundError("file: '{}' not found.".format(file_name))
-    baseConfigFile = open(file_name, "r")
-    content = [l.strip() for l in baseConfigFile.readlines()]
-    eval_str = "\n".join(content)
-    configDict = eval(eval_str)
-    baseConfigFile.close()
-    return configDict
-
-
-def create_parser(inBaseConfigDict):
-    # generate a parser
-    parser = argparse.ArgumentParser(conflict_handler="resolve")
-    for k in inBaseConfigDict:
-        parser.add_argument(
-            '--' + k, default=inBaseConfigDict[k], type=type(inBaseConfigDict[k]))
-    return parser
-
-
-def overload_parser(in_parser, in_config_dict):
-    for k in in_config_dict:
-        in_parser.add_argument(
-            '--' + k, default=in_config_dict[k], type=type(in_config_dict[k]))
-    return in_parser
-
-
-def overwrite_dict(in_dict, in_config_dict):
-    for k in in_config_dict.keys():
-        print(k)
-        if type(in_config_dict[k]) == dict:
-            overwrite_dict(in_dict[k], in_config_dict[k])
-        else:
-            in_dict[k] = in_config_dict[k]
-    return in_dict
 
 
 def parse_n(lines, cur_i, target_type=int):

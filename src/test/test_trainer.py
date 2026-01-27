@@ -10,12 +10,12 @@ import os
 from tqdm import tqdm
 import includes.importer
 
-from config.config_utils import convert_to_dict, create_config, parse_config
+from wickit.config.config_utils import load_yaml_with_replacements, parse_config_to_dict
+from utils.config_adapter import dict_to_config
 from utils.utils import Accumulator, seconds_to_str, str_to_seconds
 from wickit.utils.basic.string import dict_to_string
 from utils.config_enhancer import enhance_buffer_config, enhance_train_config, update_config
-from utils.parser_utils import create_json_parser, create_py_parser
-from utils.log import add_prefix_to_log, get_local_rank, log, shutdown_log
+from wickit.utils.log import add_prefix_to_log, get_local_rank, log, shutdown_log
 import torch.distributed as dist
 import torch.distributed
 from models.mfrrnet.mfrrnet import MFRRNetModel
@@ -23,12 +23,20 @@ from trainers.mfrrnet_trainer import MFRRNetTrainer
 from torch.profiler import profile, record_function, ProfilerActivity
 
 
+def create_config(path: str) -> dict:
+    return load_yaml_with_replacements(path)
+
+
+def parse_config(path: str, root_path: str = ""):
+    return dict_to_config(parse_config_to_dict(path, root_path=root_path))
+
+
 def train(config_train):
     resume = config_train['args'].get('resume', False)
         
-    model = eval(config_train['model']['class'])(
+    model = eval(config_train.model.type)(
         config_train)
-    trainer = eval(config_train['trainer']['class'])(
+    trainer = eval(config_train.trainer.type)(
         config_train, model, resume=resume)
     trainer.train()
     # with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
@@ -40,15 +48,15 @@ def train(config_train):
 
 def test(config_test):
     log.debug("start test")
-    config_test['use_ddp'] = False
-    test_only = config['args']['test_only']
+    config_test.runtime.use_ddp = False
+    test_only = config.args['test_only']
     resume = True
     if test_only:
         resume = False
     log.debug(dict_to_string([test_only, resume]))
-    model = eval(config_test['model']['class'])(
+    model = eval(config_test.model.type)(
         config_test)
-    trainer = eval(config_test['trainer']['class'])(
+    trainer = eval(config_test.trainer.type)(
         config_test, model, resume=resume)
     trainer.test()
 
@@ -57,7 +65,7 @@ def single_start(local_rank: int, config: dict) -> None:
     log.info("creating trainer, local_rank: {}".format(local_rank))
     log.debug("torch cuda gpu num: {}".format(torch.cuda.device_count()))
 
-    if config['use_ddp'] and config['args']['train']:
+    if config.runtime.use_ddp and config.args['train']:
         os.environ['MASTER_ADDR'] = 'localhost'
         env_dict = {
             key: os.environ[key]
@@ -71,17 +79,17 @@ def single_start(local_rank: int, config: dict) -> None:
                                 # timeout=datetime.timedelta(seconds=60)
                                 )
         log.debug(f"torch.distributed.is_initialized():{torch.distributed.is_initialized()}")
-        config['local_rank'] = local_rank
-        config['device'] = str(torch.device("cuda", config['local_rank']))
+        config.runtime.local_rank = local_rank
+        config.runtime.device = str(torch.device("cuda", config.runtime.local_rank))
         log.debug("env_local_rank: {}, dist_local_rank:{}".format(
             local_rank, torch.distributed.get_rank()))
     else:
-        config['local_rank'] = local_rank
+        config.runtime.local_rank = local_rank
 
     config_train = deepcopy(config)
     
     ''' wait for seconds to start training '''
-    if (waiting_time:=str_to_seconds((time_str:=config['trainer']['wait_to_start']))) > 0:
+    if (waiting_time:=str_to_seconds((time_str:=config.trainer.wait_to_start))) > 0:
         time_start = time.time()
         time_end = time.time()
         ''' create a custom tqdm bar here and update it manually every 5 seconds '''
@@ -93,11 +101,11 @@ def single_start(local_rank: int, config: dict) -> None:
             bar.update(1)
         bar.close()
         
-    if config['args']['train']:
+    if config.args['train']:
         log.debug(f'rank_{get_local_rank()}: start_training')
         train(config_train)
         log.debug(f'rank_{get_local_rank()}: end_training')
-        if config_train['use_ddp']:
+        if config_train.runtime.use_ddp:
             try:
                 # 销毁进程组
                 dist.destroy_process_group()
@@ -106,10 +114,10 @@ def single_start(local_rank: int, config: dict) -> None:
                 # 同样，可以在这里添加其他的错误处理逻辑
             log.debug(f'rank_{get_local_rank()}: destroyed process')
 
-    if config['args']['test'] and local_rank <= 0:
+    if config.args['test'] and local_rank <= 0:
         config_test = deepcopy(config)
-        if config['args']['train'] and 'time_string' in config_train.keys():
-            config_test['time_string'] = config_train['time_string']
+        if config.args['train'] and 'time_string' in config_train.keys():
+            config_test.time_string = config_train.time_string
         test(config_test)
 
 
@@ -127,26 +135,27 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     config = parse_config(args.config, root_path="")
-    config['trainer']['wait_to_start'] = args.wait_to_start
-    input_config = copy.deepcopy(convert_to_dict(create_config(args.config)))
+    config.unfreeze()
+    config.trainer.wait_to_start = args.wait_to_start
+    input_config = copy.deepcopy(create_config(args.config))
     # log.debug(dict_to_string(input_config))
-    config['_input_config'] = input_config
+    config._input_config = input_config
 
     # inital_config = copy.deepcopy(convert_to_dict(config))
     # inital_config['buffer_config'] = None
     # log.debug(dict_to_string(inital_config, full_name=False))
 
-    config['args'] = vars(args)
+    config.args = vars(args)
+    if (args.num_gpu) > 0:
+        config.trainer.num_gpu = args.num_gpu
     update_config(config)
     enhance_train_config(config)
 
     log.debug("{}:\n {}".format(
-        config['job_name'], dict_to_string(config['args'], 'args')))
-    if (args.num_gpu) > 0:
-        config['num_gpu'] = args.num_gpu
+        config.job_name, dict_to_string(config.args, 'args')))
 
-    if config['use_ddp'] and config['args']['train']:
-        config['world_size'] = config['num_gpu']
+    if config.runtime.use_ddp and config.args['train']:
+        config.runtime.world_size = config.trainer.num_gpu
         single_start(int(os.environ['LOCAL_RANK']), config)
         # import cProfile
         # cProfile.run("single_start(get_local_rank(), config)", filename=f"result_{get_local_rank()}.out", sort="cumulative")

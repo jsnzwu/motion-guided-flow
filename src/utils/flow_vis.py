@@ -17,7 +17,7 @@
 
 import numpy as np
 from wickit.utils.basic.string import dict_to_string
-from utils.log import log
+from wickit.utils.log import log
 
 from utils.buffer_utils import motion_vector_to_flow, to_numpy
 from wickit.utils.basic.tensor import to_torch

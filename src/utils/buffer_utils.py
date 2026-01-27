@@ -1,19 +1,12 @@
 import math
-import imghdr
 import re
 from wickit.utils.basic.string import dict_to_string
 from wickit.utils.basic.tensor import align_channel_buffer
 from wickit.utils.io.imageio import read_image
 import torch
-import matplotlib.pyplot as plt
 import numpy as np
 import cv2
-import os
 from utils.parser_utils import parse_buffer_name
-from utils.log import log
-from tqdm import tqdm
-import imageio
-import skimage.io
 albedo_min_clamp = 0.01
 
 def hdr_to_ldr(img, use_gamma=False):
@@ -353,13 +346,6 @@ def create_flip_data(data, vertical=True, horizontal=True, use_batch=True, batch
     return data
 
 
-def show(img):
-    plt.imshow(img)
-    plt.show()
-
-
-
-
 def to_numpy(arr, detach=True, cpu=True):
     assert len(arr.shape) == 3
     data = arr.permute(1, 2, 0)
@@ -374,10 +360,6 @@ def to_numpy(arr, detach=True, cpu=True):
 def to_ldr_numpy(arr, normalize=255.0):
     img = (to_numpy(torch.clamp(arr,0,1)) * normalize).astype(np.uint8)
     return img
-
-
-def save_to_img(arr, path):
-    skimage.io.imsave(path, to_ldr_numpy(arr))
 
 
 def add_text_to_image(img, text, multi_line=True) -> np.ndarray:
@@ -414,33 +396,3 @@ def add_text_to_image(img, text, multi_line=True) -> np.ndarray:
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     return img
 
-
-def torch_d2_to_d3(data):
-    H = data.shape[1]
-    W = data.shape[2]
-    return torch.cat((data, torch.zeros(1, H, W, dtype=torch.float32).to(data.device)), 0)
-
-
-def d3_to_d2(data):
-    return data[:-1, :, :]
-
-
-def export_video_in_path(path, image_files, output_path, fps, tonemap=False):
-    log.debug("{} ... {}".format(str(image_files[:3]), str(image_files[-3:])))
-    video = cv2.VideoWriter()
-    image_0 = read_image(path + "/" + image_files[0])
-    C, H, W = image_0.shape
-    video.open(output_path, cv2.VideoWriter_fourcc(
-        'm', 'p', '4', 'v'), fps, (W, H), True)
-    # log.debug(image_files)
-    for f in tqdm(image_files):
-        # tmp_image = read_image(path + "/" + f)
-        tmp_image = read_image(path + "/" + f)
-        if tonemap:
-            tmp_image = aces_tonemapper(tmp_image)
-        tmp_image = to_numpy(align_channel_buffer(tmp_image, channel_num=3))
-        if f.lower().endswith(".exr"):
-            tmp_image = (
-                gamma(tmp_image[:, :, [2, 1, 0]]) * 255.0).astype(np.uint8)
-        video.write(tmp_image)
-        # video.write(cv2.imread(os.path.join(path, f)))
