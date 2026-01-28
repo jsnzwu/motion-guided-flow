@@ -1,4 +1,4 @@
-from utils.config_adapter import dict_to_config
+from config.components import TaskConfig
 from utils.config_enhancer import enhance_train_config, update_config
 
 
@@ -48,7 +48,7 @@ def _minimal_config_dict() -> dict:
 
 
 def test_update_config_sets_runtime_fields() -> None:
-    config = dict_to_config(_minimal_config_dict())
+    config = TaskConfig.from_dict(_minimal_config_dict())
     update_config(config)
     assert config.runtime.use_gpu is True
     assert config.runtime.use_ddp is True
@@ -57,7 +57,7 @@ def test_update_config_sets_runtime_fields() -> None:
 
 
 def test_enhance_train_config_updates_dataset_and_buffer() -> None:
-    config = dict_to_config(_minimal_config_dict())
+    config = TaskConfig.from_dict(_minimal_config_dict())
     update_config(config)
     enhance_train_config(config)
     assert config.dataset.require_list == ["scene_color"]

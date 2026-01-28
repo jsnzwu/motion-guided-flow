@@ -21,8 +21,7 @@ def find_free_port():
 
 
 if __name__ == "__main__":
-    from wickit.config.config_utils import parse_config_to_dict
-    from utils.config_adapter import dict_to_config
+    from config.config_utils import parse_config
     from wickit.utils.log import log
     from wickit.utils.basic.string import dict_to_string
     parser = argparse.ArgumentParser(description="trainer")
@@ -37,7 +36,7 @@ if __name__ == "__main__":
     config_file = args.config
 
     program = 'src/test/test_trainer.py'
-    config = dict_to_config(parse_config_to_dict(config_file, root_path=""))
+    config = parse_config(config_file, root_path="")
     num_gpu = config.trainer.num_gpu
     port = find_free_port()
 

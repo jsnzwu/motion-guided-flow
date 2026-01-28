@@ -1,5 +1,5 @@
 trainer: 
-    "class": "MFRRNetTrainer"
+    "type": "MFRRNetTrainer"
     # "detach_recurrent_data": true,
     "debug_data_flow": true
     'recurrent_train_start': 0.0
@@ -12,7 +12,7 @@ trainer:
             {'start': 0, 'end': 1, 'value': 1,'ratio': true},
         ]
 dataset: {
-    "class": "MFRRNetDataset",
+    "type": "MFRRNetDataset",
     "path": "",
     "flip": false,
     "shuffle_metadata": false,

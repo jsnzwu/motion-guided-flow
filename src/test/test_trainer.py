@@ -10,8 +10,7 @@ import os
 from tqdm import tqdm
 import includes.importer
 
-from wickit.config.config_utils import load_yaml_with_replacements, parse_config_to_dict
-from utils.config_adapter import dict_to_config
+from config.config_utils import load_yaml_with_replacements, parse_config as project_parse_config
 from utils.utils import Accumulator, seconds_to_str, str_to_seconds
 from wickit.utils.basic.string import dict_to_string
 from utils.config_enhancer import enhance_buffer_config, enhance_train_config, update_config
@@ -28,7 +27,7 @@ def create_config(path: str) -> dict:
 
 
 def parse_config(path: str, root_path: str = ""):
-    return dict_to_config(parse_config_to_dict(path, root_path=root_path))
+    return project_parse_config(path, root_path=root_path)
 
 
 def train(config_train):
@@ -140,10 +139,6 @@ if __name__ == "__main__":
     input_config = copy.deepcopy(create_config(args.config))
     # log.debug(dict_to_string(input_config))
     config._input_config = input_config
-
-    # inital_config = copy.deepcopy(convert_to_dict(config))
-    # inital_config['buffer_config'] = None
-    # log.debug(dict_to_string(inital_config, full_name=False))
 
     config.args = vars(args)
     if (args.num_gpu) > 0:

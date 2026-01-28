@@ -1,31 +1,35 @@
-from typing import Optional
 import copy
-from glob import glob
+import gc
 import json
+import math
+import multiprocessing as mp
 import os
 import re
 import time
-import math
-from zipfile import BadZipfile
 import zipfile
-import torch
-import gc
-# from .patch_cropper import crop
-from utils.utils import del_dict_item, write_text_to_file
-from utils.utils import create_dir, get_file_component
-from .raw_data_importer import DatasetFormat, compress_buffer, get_augmented_buffer, get_extend_buffer, parse_buffer_name, split_buffer
-from utils.dataset_utils import write_npz
-from wickit.utils.basic.tensor import data_as_type, data_to_device
-from wickit.datasets.metadata import MetaData
-from .metadata_task_utils import create_metadata_by_glob
+from glob import glob
+from typing import Optional
+from zipfile import BadZipfile
+
 import numpy as np
-from .raw_data_importer import UE4RawDataLoader
+import torch
 from tqdm import tqdm
-from wickit.utils.basic.string import dict_to_string
-from wickit.utils.log import log
-import multiprocessing as mp
 from utils.buffer_utils import aces_tonemapper
-from utils.dataset_utils import create_warped_buffer
+from utils.dataset_utils import create_warped_buffer, write_npz
+# from .patch_cropper import crop
+from utils.utils import (create_dir, del_dict_item, get_file_component,
+                         write_text_to_file)
+from wickit.dataloaders.asset_loader_abc import AssetLoaderABC
+from wickit.dataloaders.metadata import MetaData
+from wickit.utils.basic.string import dict_to_string
+from wickit.utils.basic.tensor import data_as_type, data_to_device
+from wickit.utils.log import log
+
+from .metadata_task_utils import create_metadata_by_glob
+from .raw_data_importer import (DatasetFormat, UE4RawDataLoader,
+                                compress_buffer, get_augmented_buffer,
+                                get_extend_buffer, parse_buffer_name,
+                                split_buffer)
 
 g_augmented_data_output = None
 def history_extend(data, config):
@@ -125,26 +129,17 @@ def history_extend(data, config):
     return data
 
 
-class PatchLoaderBase:
-    def __init__(self):
-        self.export_path = ""
-
-    def load(self):
-        pass
-
-
 retry_num = 6
 sleep_time = 10
 
 
-class PatchLoader(PatchLoaderBase):
+class AssetLoader(AssetLoaderABC):
     # use MetaData to load a series of pass of a frame, return tersor data
     cache_dict = {}
     last_cached_key = []
 
     def __init__(self, data_part, buffer_config={}, cache_size = 4,
                  job_config={}, require_list=[], augmented_data_output=None, with_augment=True):
-        super(PatchLoader, self).__init__()
         self.job_config = job_config
         self.dataset_format = DatasetFormat.get_by_str(job_config['dataset_format'])
         self.export_path = self.job_config['export_path']
@@ -172,15 +167,15 @@ class PatchLoader(PatchLoaderBase):
         self.__debug_load_total += 1
         if self.enable_cache:
             cache_key = f"{metadata.__str__()}"
-            if cache_key in PatchLoader.cache_dict.keys():
-                if part_name in PatchLoader.cache_dict[cache_key].keys():
-                    ret = copy.deepcopy(PatchLoader.cache_dict[cache_key][part_name])
+            if cache_key in AssetLoader.cache_dict.keys():
+                if part_name in AssetLoader.cache_dict[cache_key].keys():
+                    ret = copy.deepcopy(AssetLoader.cache_dict[cache_key][part_name])
                     self.__debug_cache_hit += 1
                 else:
                     self.__debug_cache_part_miss += 1
                     # log.debug(dict_to_string({
                     #     'query_part_name':  f"{cache_key}.{part_name}",
-                    #     'cached_part_name': list(PatchLoader.cache_dict[cache_key].keys())
+                    #     'cached_part_name': list(AssetLoader.cache_dict[cache_key].keys())
                     # }))
             else:
                 self.__debug_cache_miss += 1
@@ -203,18 +198,18 @@ class PatchLoader(PatchLoaderBase):
         
         ret = tmp_data
         if self.enable_cache:
-            if cache_key not in PatchLoader.cache_dict.keys():
-                PatchLoader.cache_dict[cache_key] = {}
-                PatchLoader.last_cached_key.append(cache_key)
-                if len(PatchLoader.last_cached_key) > self.cache_size:
-                    # del_key = list(PatchLoader.cache_dict.keys())[-1]
-                    del_key = PatchLoader.last_cached_key[0]
+            if cache_key not in AssetLoader.cache_dict.keys():
+                AssetLoader.cache_dict[cache_key] = {}
+                AssetLoader.last_cached_key.append(cache_key)
+                if len(AssetLoader.last_cached_key) > self.cache_size:
+                    # del_key = list(AssetLoader.cache_dict.keys())[-1]
+                    del_key = AssetLoader.last_cached_key[0]
                     # log.debug(f"delete key:{del_key}")
-                    del PatchLoader.cache_dict[del_key]
-                    del PatchLoader.last_cached_key[0]
+                    del AssetLoader.cache_dict[del_key]
+                    del AssetLoader.last_cached_key[0]
                     gc.collect()
-            PatchLoader.cache_dict[cache_key][part_name] = ret
-            # PatchLoader.cache_dict[cache_key][part_name] = copy.deepcopy(ret)
+            AssetLoader.cache_dict[cache_key][part_name] = ret
+            # AssetLoader.cache_dict[cache_key][part_name] = copy.deepcopy(ret)
 
         return ret
 
@@ -603,5 +598,8 @@ class PatchLoader(PatchLoaderBase):
                 pool.terminate()
             finally:
                 pool.join()
+
+    def release(self) -> None:
+        return
     
     

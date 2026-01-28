@@ -23,7 +23,8 @@ train_parameter: {
     "amp": true,
     "train_precision_mode": "fp16",
     "lr_config": {
-        "class": "ConstantWarmup",
+        "type": "ConstantWarmup",
+        "initial_lr": !!float 2e-4,
         "max_lr": !!float 2e-4,
         "min_lr": !!float 2e-5,
         "warmup_epoch": 0,
@@ -33,9 +34,10 @@ train_parameter: {
     },
 }
 debug: False
-num_gpu: 2
-# cuda_visible_devices: '0\,1\,2\,3'
-cuda_visible_devices: '0\,1'
+trainer:
+    num_gpu: 2
+runtime:
+    cuda_visible_devices: [0, 1]
 
 output_root_path: "../output/train_output/"
 # clear_output_path: True

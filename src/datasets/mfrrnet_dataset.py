@@ -1,16 +1,16 @@
 import torch
 
-from wickit.datasets import DatasetBase
+from wickit.datasets import DatasetABC
 from wickit.utils.enums import ForwardMode
-from dataloaders.patch_loader import PatchLoader
+from dataloaders.asset_loader import AssetLoader
 from utils.dataset_utils import DatasetGlobalConfig
 from utils.log_tonemap_utils import tonemap_func
 
 start_offset = 0
 
 
-class MFRRNetDataset(DatasetBase):
-    def __init__(self, config, dataset_name, metadata, patch_loader: PatchLoader, mode):
+class MFRRNetDataset(DatasetABC):
+    def __init__(self, config, dataset_name, metadata, patch_loader: AssetLoader, mode):
         runner_mode = ForwardMode.train if mode == "train" else ForwardMode.test
         super().__init__(dataset_name, metadata, asset_loader=None, mode=runner_mode, config=getattr(config, "dataset", None))
         self.metadatas = metadata

@@ -1,10 +1,11 @@
-from models.general.unet import UNetDecoder, UNetEncoder, dual_conv
-from models.general.unet import single_conv
-from wickit.utils.log import log
-from wickit.utils.basic.string import dict_to_string
-from models.general.common_structure import NetBase, create_act_func, create_norm_func
-import torch.nn as nn
 import torch
+import torch.nn as nn
+from models.general.common_structure import create_act_func, create_norm_func
+from models.general.unet import (UNetDecoder, UNetEncoder, dual_conv,
+                                 single_conv)
+from wickit.utils.basic.string import dict_to_string
+from wickit.utils.log import log
+
 from .common import ConvGRUCellV6, ConvLSTMCellHiddenV6, ConvLSTMCellV6
 
 

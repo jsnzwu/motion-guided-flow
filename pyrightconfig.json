@@ -1,6 +1,6 @@
 {
     "extraPaths": [
-        "./code/src",
-        "./code/external/wickit"
+        "src",
+        "external/wickit"
     ]
 }

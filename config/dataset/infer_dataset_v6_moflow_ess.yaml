@@ -6,8 +6,10 @@ pipeline: [
     "trainers/moflow_trainer.yaml",
 ]
 include: []
-num_gpu: 1
-cuda_visible_devices: '0\,'
+trainer:
+    num_gpu: 1
+runtime:
+    cuda_visible_devices: [0]
 output_root_path: "../output/train_output/"
 clear_output_path: True
 dataset: 

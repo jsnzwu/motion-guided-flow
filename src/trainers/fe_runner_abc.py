@@ -1,11 +1,13 @@
-from wickit.utils.log import configure_logging
+from abc import ABC, abstractmethod
+
 import numpy as np
 import torch
-from wickit.utils.basic.string import dict_to_string
 from utils.buffer_utils import create_flip_data
 from utils.dataset_utils import DatasetGlobalConfig
-from wickit.utils.basic.tensor import data_as_type, data_to_device
 from wickit.runner import Runner
+from wickit.utils.basic.string import dict_to_string
+from wickit.utils.basic.tensor import data_as_type, data_to_device
+from wickit.utils.log import configure_logging
 
 configure_logging()
 ''' create feature_0 and encoding_0 '''
@@ -20,7 +22,7 @@ def get_his_recurrent_list(cur_data_index, num_he, block_size=0):
     else:
         return [((cur_data_index - he_id) % block_size != 0) for he_id in range(num_he)]
 
-class FERunnerBase(Runner):
+class FERunnerABC(Runner, ABC):
 
     def __init__(self, config, model, resume=False):
         super().__init__(config, model, resume)
@@ -126,11 +128,14 @@ class FERunnerBase(Runner):
         assert flag, dict_to_string([block_cfg, self.epoch_index, self.total_epoch])
         return 1
 
+    @abstractmethod
     def set_recurrent_data(self, mode):
         ...
-        
+
+    @abstractmethod
     def set_recurrent_feature(self, mode):
         ...
 
+    @abstractmethod
     def cache_one_batch_output(self, mode, epoch_index=None, batch_index=None):
         ...

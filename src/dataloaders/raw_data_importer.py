@@ -28,7 +28,7 @@ from utils.buffer_utils import aces_tonemapper, buffer_data_to_vis, buffer_raw_t
 from wickit.utils.basic.tensor import tensor_as_type_str
 from wickit.utils.io.imageio import read_image
 from wickit.utils.ext.warp import get_merged_motion_vector_from_last, warp
-from wickit.datasets.metadata import MetaData
+from wickit.dataloaders.metadata import MetaData
 from utils.parser_utils import parse_buffer_name, parse_find_dict, parse_flat_dict
 
 

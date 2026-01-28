@@ -1,14 +1,14 @@
-from wickit.models.model_base import ModelBase
+from wickit.models.model_abc import ModelABC
 from wickit.utils.enums import ForwardMode
 from wickit.utils.log import log
 import torch
 
 
-class BlendModelBase(ModelBase):
+class BlendModelABC(ModelABC):
     def __init__(self, config):
         model_cfg = config["model"] if isinstance(config, dict) else config.model
         self.enable_blend = model_cfg.get('config', {}).get('enable_blend_mode', False)
-        log.debug(f'BlendModelBase.enable_blend_mode: {self.enable_blend}')
+        log.debug(f'BlendModelABC.enable_blend_mode: {self.enable_blend}')
         super().__init__(config)
 
     def update(self, data, mode: ForwardMode | None = None):

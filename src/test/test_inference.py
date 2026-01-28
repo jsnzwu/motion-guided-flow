@@ -1,55 +1,46 @@
 
-import includes.importer
 import argparse
+import copy
 import math
-from typing import List
-import torch
-import numpy as np
 import os
 import sys
-import copy
-from tqdm import tqdm
-import torch.nn.functional as F
-import torch.nn as nn
-from utils.flip_loss import compute_ldrflip
-from torch.amp.autocast_mode import autocast as autocast
-from utils.config_enhancer import enhance_buffer_config, enhance_train_config, update_config
-from utils.flow_vis import mv_to_image
-from utils.buffer_utils import aces_tonemapper, gamma, inv_gamma, inv_log_tonemapper
-from utils.buffer_utils import to_numpy
-from wickit.utils.basic.tensor import to_torch
-from utils.flow_vis import flow_to_image
-from utils.buffer_utils import flow_to_motion_vector
-from models.loss.loss import LossFunction, ssim_per_pixel
-from wickit.datasets.metadata import MetaData
-from dataloaders.raw_data_importer import UE4RawDataLoader, get_augmented_buffer
-from utils.dataset_utils import create_de_color
-from utils.utils import del_dict_item
-from utils.buffer_utils import motion_vector_to_flow
-from utils.dataset_utils import get_input_filter_list
-from utils.utils import create_dir, remove_all_in_dir
-from utils.buffer_utils import log_tonemapper
-from utils.dataset_utils import resize
-from utils.dataset_utils import create_warped_buffer
-from trainers.mfrrnet_trainer import MFRRNetTrainer
-import torch.distributed as dist
-from wickit.utils.ext.warp import warp
-from utils.utils import write_text_to_file
-from models.mfrrnet.mfrrnet import MFRRNetModel
-from wickit.utils.basic.tensor import align_channel_buffer
-from wickit.utils.io.imageio import write_image
-from utils.utils import Accumulator
-from utils.utils import del_data
-from dataloaders.patch_loader import PatchLoader
-from wickit.config.config_utils import parse_config_to_dict
-from utils.config_adapter import dict_to_config
-from wickit.utils.basic.string import dict_to_string
-from wickit.utils.log import log
-from utils.buffer_utils import log_tonemapper
-from wickit.utils.ext.warp import warp
+from typing import List
+
 import cv2
+import includes.importer
 import numpy as np
+import torch
+import torch.distributed as dist
+import torch.nn as nn
+import torch.nn.functional as F
+from dataloaders.asset_loader import AssetLoader
+from dataloaders.raw_data_importer import (UE4RawDataLoader,
+                                           get_augmented_buffer)
 from matplotlib import pyplot as plt
+from models.loss.loss import LossFunction, ssim_per_pixel
+from models.mfrrnet.mfrrnet import MFRRNetModel
+from torch.amp.autocast_mode import autocast as autocast
+from tqdm import tqdm
+from trainers.mfrrnet_trainer import MFRRNetTrainer
+from utils.buffer_utils import (aces_tonemapper, flow_to_motion_vector, gamma,
+                                inv_gamma, inv_log_tonemapper, log_tonemapper,
+                                motion_vector_to_flow, to_numpy)
+from utils.config_enhancer import (enhance_buffer_config, enhance_train_config,
+                                   update_config)
+from utils.dataset_utils import (create_de_color, create_warped_buffer,
+                                 get_input_filter_list, resize)
+from utils.flip_loss import compute_ldrflip
+from utils.flow_vis import flow_to_image, mv_to_image
+from utils.utils import (Accumulator, create_dir, del_data, del_dict_item,
+                         remove_all_in_dir, write_text_to_file)
+from config.config_utils import parse_config
+from wickit.dataloaders.metadata import MetaData
+from wickit.utils.basic.string import dict_to_string
+from wickit.utils.basic.tensor import align_channel_buffer, to_torch
+from wickit.utils.ext.warp import warp
+from wickit.utils.io.imageio import write_image
+from wickit.utils.log import log
+
 num_he = 2
 ldr_mode = False
 index = 0
@@ -114,8 +105,8 @@ def inference():
                             buffer = aces_tonemapper(buffer)
 
                         write_image(tnr.config['write_path'] +
-                                     # f"{buffer_name}/{buffer_name}.{suffix}", buffer, mkdir=True, is_gamma=suffix == 'png')
-                                     f"{buffer_name}/{buffer_name}_{str(out_idx).zfill(4)}.{suffix}", buffer, mkdir=True, is_gamma=suffix == 'png')
+                                    # f"{buffer_name}/{buffer_name}.{suffix}", buffer, mkdir=True, is_gamma=suffix == 'png')
+                                    f"{buffer_name}/{buffer_name}_{str(out_idx).zfill(4)}.{suffix}", buffer, mkdir=True, is_gamma=suffix == 'png')
                     # log.debug(dict_to_string(data_part))
                     tnr.cur_data_index = index
                     data = copy.deepcopy(data_part)
@@ -243,14 +234,15 @@ def inference():
                     #             align_channel_buffer(rmv, channel_num=3, mode="value", value=0.0), mkdir=True)
                     # write_buffer(tnr.config['write_path']+f"rmv/rmv_{str(out_idx).zfill(4)}.{suffix}",
                     #              align_channel_buffer(to_vis(rmv)), mkdir=True)
-            break        
+            break
             index += 1
+
 
 def update_inference_config(config):
     if hasattr(config, "unfreeze") and getattr(config, "_frozen", False):
         config.unfreeze()
     if hasattr(config, "_allow_new_keys"):
-        object.__setattr__(config, "_allow_new_keys", True)
+        config._allow_new_keys = True
     config._input_config = copy.deepcopy(config.to_dict() if hasattr(config, "to_dict") else config)
     update_config(config)
     config.runtime.local_rank = 0
@@ -286,7 +278,7 @@ if __name__ == '__main__':
 
     metric = ['psnr', 'ssim', 'lpips']
     if mode == "moflow":
-        dataset_cfg = dict_to_config(parse_config_to_dict("config/dataset/infer_dataset_v6_moflow_ess.yaml", root_path=""))
+        dataset_cfg = parse_config("config/dataset/infer_dataset_v6_moflow_ess.yaml", root_path="")
         if args.config:
             config_path = [args.config]
         else:
@@ -303,11 +295,11 @@ if __name__ == '__main__':
     if hasattr(dataset_cfg, "unfreeze") and getattr(dataset_cfg, "_frozen", False):
         dataset_cfg.unfreeze()
     if hasattr(dataset_cfg, "_allow_new_keys"):
-        object.__setattr__(dataset_cfg, "_allow_new_keys", True)
+        dataset_cfg._allow_new_keys = True
     if hasattr(dataset_cfg, "dataset") and hasattr(dataset_cfg.dataset, "unfreeze") and getattr(dataset_cfg.dataset, "_frozen", False):
         dataset_cfg.dataset.unfreeze()
     if hasattr(dataset_cfg, "dataset") and hasattr(dataset_cfg.dataset, "_allow_new_keys"):
-        object.__setattr__(dataset_cfg.dataset, "_allow_new_keys", True)
+        dataset_cfg.dataset._allow_new_keys = True
 
     scene_name = cmd_scene.split("_")[0] + "_T"
     path_alias = scene_name
@@ -364,7 +356,7 @@ if __name__ == '__main__':
     else:
         block_sizes = [block_size for _ in range(num_cfg)]
     for i in range(len(config_path)):
-        tmp_config = dict_to_config(parse_config_to_dict(config_path[i], root_path=""))
+        tmp_config = parse_config(config_path[i], root_path="")
         # log.debug(dict_to_string(tmp_config.model.input_buffer))
         update_inference_config(tmp_config)
         enhance_train_config(tmp_config)
@@ -391,24 +383,31 @@ if __name__ == '__main__':
         tmp_trainer = eval(config_train.trainer.type)(
             config_train, tmp_model, resume=resume)
         tmp_trainer.prepare("test")
-        tmp_trainer.config.vars = {}
-        tmp_trainer.config.vars['skip_pred'] = False
-        tmp_trainer.config.vars['skip_pred'] = block_sizes[i] > 1
-        tmp_trainer.config.vars['block_size'] = block_sizes[i]
-        tmp_trainer.config.trainer.recurrent_test = {
-            "block_size": [
-                {'start': 0, 'end': 1, 'value': block_sizes[i], 'ratio': True},
-            ]
+        current_write_path = write_path + \
+            f"{inference_name}/{tmp_trainer.config.model.model_name}_{str(block_sizes[i])}/"
+        vars_update = {
+            "skip_pred": block_sizes[i] > 1,
+            "block_size": block_sizes[i],
+            "writer": SummaryWriter(log_dir=current_write_path),
+            "step_log_file": f"{current_write_path}/step.log",
+            "epoch_log_file": f"{current_write_path}/epoch.log",
         }
         for item in metric:
-            tmp_trainer.config.vars[f"{item}_acc"] = Accumulator()
+            vars_update[f"{item}_acc"] = Accumulator()
             for j in range(block_sizes[i]):
-                tmp_trainer.config.vars[f"{item}_{j}_acc"] = Accumulator()
-        tmp_trainer.config.write_path = write_path + \
-            f"{inference_name}/{tmp_trainer.config.model.model_name}_{str(block_sizes[i])}/"
-        tmp_trainer.config.vars['writer'] = SummaryWriter(log_dir=tmp_trainer.config.write_path)
-        tmp_trainer.config.vars['step_log_file'] = f"{tmp_trainer.config.write_path}/step.log"
-        tmp_trainer.config.vars['epoch_log_file'] = f"{tmp_trainer.config.write_path}/epoch.log"
+                vars_update[f"{item}_{j}_acc"] = Accumulator()
+
+        tmp_trainer.config.merge({
+            "vars": vars_update,
+            "write_path": current_write_path,
+            "trainer": {
+                "recurrent_test": {
+                    "block_size": [
+                        {'start': 0, 'end': 1, 'value': block_sizes[i], 'ratio': True},
+                    ]
+                }
+            }
+        })
 
         tmp_trainer.last_output = []
         create_dir(tmp_trainer.config.write_path)
@@ -420,7 +419,7 @@ if __name__ == '__main__':
         'input_config': dataset_cfg,
         'input_buffer': dataset_cfg.model.require_data
     })
-    loader = PatchLoader(
+    loader = AssetLoader(
         dataset_cfg.dataset.path,
         job_config={'export_path': dataset_cfg.dataset.path, 'dataset_format': 'npz'},
         buffer_config=dataset_cfg.buffer_config,

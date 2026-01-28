@@ -13,7 +13,7 @@ src/
 ├── datasets/            # Dataset implementations
 ├── lr_scheduler/        # Learning rate schedulers (deprecated, use wickit.lr_schedulers)
 ├── models/              # Model architectures
-│   ├── blend_model_base.py    # Blend model base class
+│   ├── blend_model_abc.py     # Blend model abstract interface
 │   ├── conv_lstm/             # ConvLSTM implementation
 │   ├── general/               # General-purpose modules (UNet, CommonStructure)
 │   ├── loss/                  # Loss functions
@@ -28,27 +28,27 @@ src/
 
 ### Configuration System
 
-The project uses Wickit config utilities with an adapter to convert YAML/config dicts to typed dataclasses:
+The project uses Wickit config utilities directly to load YAML and build typed configs:
 
-- **`wickit.config.config_utils`**: Configuration loading utilities (YAML + includes/pipeline/base)
-- **`utils/config_adapter.py`**: Dict-to-dataclass adapter (`DictToDataclassAdapter`)
+- **`config.config_utils`**: Configuration loading utilities (YAML + includes/pipeline/base)
+- **`config.components`**: Typed project config dataclasses (e.g. `TaskConfig`)
 
 ### Data Loading Pipeline
 
-1. **`dataloaders/patch_loader.py`**: Main data loader with caching
-2. **`dataloaders/dataset_base.py`**: Wickit dataset base (kept in sync; project-specific logic lives in `datasets/mfrrnet_dataset.py`)
+1. **`dataloaders/asset_loader.py`**: Main data loader with caching
+2. **`datasets/`**: Project datasets built on `wickit.datasets.DatasetABC`
 3. **`datasets/mfrrnet_dataset.py`**: MFRRNet-specific dataset
 
 ### Models
 
 - **`models/mfrrnet/mfrrnet.py`**: Main MFRRNet model (~1290 lines)
-- **`models/blend_model_base.py`**: Blend model base for hybrid rendering
+- **`models/blend_model_abc.py`**: Blend model base for hybrid rendering
 - **`models/loss/flow_loss.py`**: Domain-specific flow loss functions
 
 ### Training
 
 - **`trainers/mfrrnet_runner.py`**: MFRRNet training runner extending wickit.Runner
-- **`trainers/fe_runner_base.py`**: Feature-extraction runner base extending wickit.Runner
+- **`trainers/fe_runner_abc.py`**: Feature-extraction runner contract extending wickit.Runner
 
 ## Type Annotation Guidelines
 
@@ -136,10 +136,9 @@ This codebase was migrated from a self-contained infrastructure to use wickit. K
 
 1. **Removed**: `src/lr_scheduler/`, `src/samplers/` (use wickit equivalents)
 2. **Removed**: `src/utils/str_utils.py`, `src/utils/timer.py` (use wickit equivalents)
-3. **Added**: `utils/config_adapter.py` for configuration adaptation
-4. **Added**: `trainers/mfrrnet_runner.py` extending wickit.Runner
-5. **Modified**: Models to inherit from wickit.ModelBase
-6. **Modified**: Datasets to inherit from wickit.DatasetBase
+3. **Added**: `trainers/mfrrnet_runner.py` extending wickit.Runner
+4. **Modified**: Models to inherit from wickit.ModelABC
+5. **Modified**: Datasets to inherit from wickit.DatasetABC
 
 ## Testing
 
@@ -156,11 +155,11 @@ The project uses the following import patterns:
 ```python
 # wickit imports (external framework)
 from wickit.runner import Runner
-from wickit.datasets import DatasetBase
-from wickit.models import ModelBase
+from wickit.datasets import DatasetABC
+from wickit.models import ModelABC
 
 # Project imports (domain-specific)
-from utils.config_adapter import DictToDataclassAdapter
+from config.config_utils import parse_config
 from datasets.mfrrnet_dataset import MFRRNetDataset
 from trainers.mfrrnet_runner import MFRRNetRunner
 ```

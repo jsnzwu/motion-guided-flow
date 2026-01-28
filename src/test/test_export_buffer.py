@@ -7,8 +7,7 @@ from dataloaders.metadata_task_utils import dispatch_task_by_metadata
 from dataloaders.raw_data_importer import UE4RawDataLoader
 from wickit.utils.log import log
 from wickit.utils.basic.string import dict_to_string
-from wickit.config.config_utils import parse_config_to_dict
-from utils.config_adapter import dict_to_config
+from config.config_utils import parse_config
 
 if __name__ == "__main__":
 
@@ -16,7 +15,7 @@ if __name__ == "__main__":
     parser.add_argument('--config', type=str, default="config/export/export_st.yaml")
     # parser.add_argument('--config', type=str, default="config/export/export_no_st.yaml")
     args = parser.parse_args()
-    job_config = dict_to_config(parse_config_to_dict(args.config, root_path=""))
+    job_config = parse_config(args.config, root_path="")
 
     # log.debug(dict_to_string(job_config))
     if 'dataset' in job_config.keys():

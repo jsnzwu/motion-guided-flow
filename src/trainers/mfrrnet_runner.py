@@ -1,27 +1,23 @@
 from __future__ import annotations
 
 import copy
+
 import torch
 import torch.nn.functional as F
-
-from wickit.runner import Runner
-from wickit.utils.enums import ForwardMode
-from utils.buffer_utils import (
-    aces_tonemapper,
-    buffer_data_to_vis,
-    create_flip_data,
-    inv_log_tonemapper,
-    to_numpy,
-)
-from utils.config_adapter import DictToDataclassAdapter, TaskConfig
-from utils.dataset_utils import DatasetGlobalConfig
-from wickit.utils.basic.tensor import align_channel_buffer, data_as_type, data_to_device
-from wickit.utils.log import log
-from utils.loss_utils import lpips, psnr, ssim
-from trainers.fe_runner_base import get_his_recurrent_list
+from config.components import TaskConfig
 from dataloaders.metadata_task_utils import create_meta_data_list
-from dataloaders.patch_loader import PatchLoader
+from dataloaders.asset_loader import AssetLoader
 from datasets.mfrrnet_dataset import MFRRNetDataset
+from trainers.fe_runner_abc import get_his_recurrent_list
+from utils.buffer_utils import (aces_tonemapper, buffer_data_to_vis,
+                                create_flip_data, inv_log_tonemapper, to_numpy)
+from utils.dataset_utils import DatasetGlobalConfig
+from utils.loss_utils import lpips, psnr, ssim
+from wickit.runner import Runner
+from wickit.utils.basic.tensor import (align_channel_buffer, data_as_type,
+                                       data_to_device)
+from wickit.utils.enums import ForwardMode
+from wickit.utils.log import log
 
 
 class MFRRNetRunner(Runner):
@@ -29,7 +25,10 @@ class MFRRNetRunner(Runner):
         if isinstance(getattr(model, "trainer_config", None), TaskConfig):
             config = model.trainer_config
         elif not isinstance(config, TaskConfig):
-            config = DictToDataclassAdapter(config).to_task_config()
+            if isinstance(config, dict):
+                config = TaskConfig.from_dict(config)
+            else:
+                raise TypeError(f"config must be dict or TaskConfig, got {type(config)}")
         super().__init__(config, model, resume)
         self.output_cache = None
         self.last_output = []
@@ -38,8 +37,6 @@ class MFRRNetRunner(Runner):
         self.cur_data_index = -1
         self.use_cuda = self.device_context.use_gpu
         self.disable_debug_images = True
-        self.config.unfreeze()
-        object.__setattr__(self.config, "_allow_new_keys", True)
 
     def _normalize_mode(self, mode: ForwardMode | str) -> ForwardMode:
         if isinstance(mode, ForwardMode):
@@ -82,7 +79,7 @@ class MFRRNetRunner(Runner):
         if len(self.train_meta_data_list) <= 0:
             raise RuntimeError("train dataset not found.")
         require_list = self.config['dataset'].get('require_list', [])
-        self.patch_loader = PatchLoader(
+        self.patch_loader = AssetLoader(
             self.config['dataset']['part'],
             job_config={
                 'export_path': self.config['job_config']['export_path'],

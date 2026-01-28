@@ -387,16 +387,12 @@ def rgb2yuv(rgb):
     return yuv_images
 
 
-class LossFuncDataBase:
-    def __init__(self, name, args, mode, enable):
+class LossFuncData:
+    def __init__(self, name, args, mode, scale, config, is_paired, enable):
         self.name = name
         self.args = args
         self.mode = mode
         self.enable = enable
-        
-class LossFuncData(LossFuncDataBase):
-    def __init__(self, name, args, mode, scale, config, is_paired, enable):
-        super().__init__(name, args, mode, enable)
         self.scale = scale
         self.config = config
         self.is_paired = is_paired

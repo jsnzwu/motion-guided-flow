@@ -1,26 +1,30 @@
 from __future__ import annotations
-from utils.log_tonemap_utils import inv_tonemap_func, tonemap_func
+
+import copy
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from config.components import MFRRModelConfig, TaskConfig
+from dataloaders.asset_loader import history_extend
+from datasets.mfrrnet_dataset import MFRRNetDataset
+from models.general.common_structure import Net
 from models.mfrrnet.common import ConvLSTMCellV6
-from wickit.utils.log import log
-from wickit.utils.basic.string import dict_to_string
-from wickit.models.model_base import ModelBaseEXT
-from utils.config_adapter import DictToDataclassAdapter
-from wickit.utils.ext.warp import get_merged_motion_vector_from_last, warp
 from utils.buffer_utils import fix_dmdl_color_zero_value
-from utils.dataset_utils import create_de_color, DatasetGlobalConfig
+from utils.dataset_utils import DatasetGlobalConfig, create_de_color
+from utils.log_tonemap_utils import inv_tonemap_func, tonemap_func
 from utils.model_utils import get_1d_dim, get_2d_dim
 from utils.parser_utils import parse_buffer_name
-from wickit.utils.struct.struct_base import FlexDataStruct
-from wickit.utils.enums import ForwardMode
-from .loss.flow_loss import zero_flow_l1_loss, flow2_loss
-from models.general.common_structure import NetBase
-import copy
-from datasets.mfrrnet_dataset import MFRRNetDataset
 from utils.utils import TensorConcator, add_metaname
-from dataloaders.patch_loader import history_extend
-import torch.nn as nn
-import torch
-import torch.nn.functional as F
+from wickit.models.model_abc import ModelABC
+from wickit.utils.basic.string import dict_to_string
+from wickit.utils.enums import ForwardMode
+from wickit.utils.ext.warp import get_merged_motion_vector_from_last, warp
+from wickit.utils.log import log
+from wickit.utils.struct.struct import FlexDataStruct
+
+from .loss.flow_loss import flow2_loss, zero_flow_l1_loss
+
 # from .archs_v6 import ConvLSTMCell
 
 
@@ -255,11 +259,11 @@ def recurrent_d2e_stage(he_id, data, ret, sc_layers, d2e_sc_layers, d2e_g_sc_lay
                                         net, recurrent_blocks, pf, he_pfs, enable_gbuffer)
 
 
-class MRFFNet(NetBase):
+class MRFFNet(Net):
     class_name = "MRFFNet"
     cnt_instance = 0
 
-    def __init__(self, config):
+    def __init__(self, config: MFRRModelConfig):
         add_metaname(self, MRFFNet)
         super().__init__(config)
         self.layer_flow_channel = 2
@@ -379,7 +383,8 @@ class MRFFNet(NetBase):
         self.he_ids = self.config.history_encoders['history_id']
 
         ''' network import '''
-        from models.mfrrnet.archs import ShadeNetDecoder, ShadeNetEncoder, DecoderBlock
+        from models.mfrrnet.archs import (DecoderBlock, ShadeNetDecoder,
+                                          ShadeNetEncoder)
 
         if self.config.gbuffer_encoder['class'] == 'ShadeNetEncoder':
             self.gbuffer_encoder = ShadeNetEncoder(self.config.gbuffer_encoder)
@@ -1202,10 +1207,10 @@ def get_dmdl_occ_mask(data):
     return torch.where(torch.abs((warped_gt) - (gt)) > 0.05, torch.ones_like(gt), torch.zeros_like(gt))
 
 
-class MFRRNetModel(ModelBaseEXT):
+class MFRRNetModel(ModelABC):
     def __init__(self, config):
         if isinstance(config, dict):
-            config = DictToDataclassAdapter(config).to_task_config()
+            config = TaskConfig.from_dict(config)
         config.model.unfreeze()
         super().__init__(config)
 
@@ -1239,6 +1244,9 @@ class MFRRNetModel(ModelBaseEXT):
 
     def get_augment_data(self, data):
         return history_extend(data, self.trainer_config)
+
+    def forward(self, net_input):
+        return self.net(net_input)
 
     def create_model(self):
         history_encoders_config = self.config['history_encoders']

@@ -15,8 +15,7 @@ from wickit.utils.basic.tensor import tensor_as_type_str
 from wickit.utils.basic.string import dict_to_string
 from wickit.utils.log import add_prefix_to_log, log, shutdown_log
 from models.mfrrnet.mfrrnet import MFRRNetModel
-from wickit.config.config_utils import parse_config_to_dict
-from utils.config_adapter import dict_to_config
+from config.config_utils import parse_config
 
 def convert_onnx(model, patch_loader=None):
     # model.set_eval()
@@ -84,7 +83,7 @@ if __name__ == "__main__":
     parser.add_argument("--config", help="trainer config file path")
     args = parser.parse_args()
     
-    config = dict_to_config(parse_config_to_dict(args.config, root_path=""))
+    config = parse_config(args.config, root_path="")
     update_config(config)
     enhance_train_config(config)
     

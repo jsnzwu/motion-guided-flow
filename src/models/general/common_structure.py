@@ -30,12 +30,12 @@ def create_norm_func(name="batch_norm_2d"):
     return ops[name]
 
 
-class NetBase(nn.Module):
-    class_name = "NetBase"
+class Net(nn.Module):
+    class_name = "Net"
     cnt_instance = 0
     
     def __init__(self, config={}):
-        add_metaname(self, NetBase)
+        add_metaname(self, Net)
         super().__init__()
         log.debug("init class: {}".format(self.full_name))
         self.config = config
@@ -92,13 +92,13 @@ class NetBase(nn.Module):
         return ret
 
 
-class Inputable(NetBase):
+class Inputable(Net):
     cnt_instance = 0
     class_name = "Inputable"
 
     def __init__(self, config={}, *args, **kwargs):
         add_metaname(self, Inputable)
-        NetBase.__init__(self, config)
+        Net.__init__(self, config)
         self.in_channel = 0
         self.get_in_channel(config)
         # log.debug("[Inputable] init class: {}".format(self.name))
@@ -121,13 +121,13 @@ class Inputable(NetBase):
                 'no "in_channel"(num) or "input_buffer"(array) specified in config: {}'.format(config))
 
 
-class Outputable(NetBase):
+class Outputable(Net):
     name = "Outputable"
     cnt_instance = 0
 
     def __init__(self, config={}, *args, **kwargs):
         add_metaname(self, Outputable)
-        NetBase.__init__(self, config)
+        Net.__init__(self, config)
         self.out_channel = 0
         self.out_items = config.get('output_buffer', [])
         self.get_out_channel(config)

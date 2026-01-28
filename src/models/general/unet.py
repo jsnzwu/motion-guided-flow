@@ -2,7 +2,7 @@ import copy
 import torch
 import torch.nn as nn
 from utils.utils import add_metaname
-from models.general.common_structure import Outputable, Inputable, NetBase, create_act_func, create_norm_func
+from models.general.common_structure import Outputable, Inputable, Net, create_act_func, create_norm_func
 
 from utils.model_utils import calc_2d_dim
 from wickit.utils.basic.string import dict_to_string
@@ -405,7 +405,7 @@ class UNetDecoder(Outputable):
         return ret
 
 
-class UNet(NetBase):
+class UNet(Net):
     '''
     {
         "class": "UNet",

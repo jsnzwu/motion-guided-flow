@@ -15,6 +15,7 @@ initial_inference: false
 # trainer:
 #     debug_data_flow: false
 trainer:
+    num_gpu: 2
     recurrent_train:
         block_size: [
             {'start': 0, 'end': 0.5, 'value': 3, 'ratio': true},
@@ -32,7 +33,8 @@ train_parameter: {
     "amp": true,
     "train_precision_mode": "fp16",
     "lr_config": {
-        "class": "ConstantWarmup",
+        "type": "ConstantWarmup",
+        "initial_lr": !!float 1e-4,
         "max_lr": !!float 1e-4,
         "min_lr": !!float 1e-5,
         "warmup_epoch": 0,
@@ -42,10 +44,8 @@ train_parameter: {
     },
 }
 debug: False
-num_gpu: 2
-# cuda_visible_devices: '4\,5\,6\,7'
-# cuda_visible_devices: '6\,7\,2\,3'
-cuda_visible_devices: '1\,0'
+runtime:
+    cuda_visible_devices: [1, 0]
 
 output_root_path: "../output/train_output/"
 # clear_output_path: True

@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from wickit.config.config_utils import load_yaml_with_replacements, parse_config_to_dict
+from config.config_utils import load_yaml_with_replacements, parse_config, parse_config_to_dict
 from wickit.utils.basic.dict import deep_update
-from utils.config_adapter import TaskConfig, dict_to_config
+from config.components import TaskConfig
 
 
 def _write_yaml(path: Path, content: str) -> None:
@@ -44,9 +44,9 @@ def test_parse_config_returns_task_config(tmp_path: Path) -> None:
         "\n".join(
             [
                 "job_name: unit_test",
-                "num_gpu: 1",
                 "trainer:",
                 "  type: DummyTrainer",
+                "  num_gpu: 1",
                 "dataset:",
                 "  type: DummyDataset",
                 "  train_num_worker_sum: 2",
@@ -84,6 +84,6 @@ def test_parse_config_returns_task_config(tmp_path: Path) -> None:
             ]
         ),
     )
-    config = dict_to_config(parse_config_to_dict(str(cfg), root_path=""))
+    config = parse_config(str(cfg), root_path="")
     assert isinstance(config, TaskConfig)
     assert config.job_name == "unit_test"
