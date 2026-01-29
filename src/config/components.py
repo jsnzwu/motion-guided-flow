@@ -13,11 +13,14 @@ from wickit.config.components import (
     TrainParameterConfig,
     TrainerConfig as WickitTrainerConfig,
 )
+from wickit.config import CONFIGS
 from wickit.logging.config import LoggingConfig
 
 
+# ========== Dataset Configs ==========
+
 @dataclass
-class DatasetConfig(WickitDatasetConfig):
+class FGDatasetConfig(WickitDatasetConfig):
     scale_config: Dict[str, Any] = field(default_factory=dict)
     require_list: List[str] = field(default_factory=list)
     demodulation_mode: str = ""
@@ -25,8 +28,10 @@ class DatasetConfig(WickitDatasetConfig):
     future_config: Dict[str, Any] = field(default_factory=dict)
 
 
+# ========== Job Configs ==========
+
 @dataclass
-class JobConfig(WickitJobConfig):
+class MFRRJobConfig(WickitJobConfig):
     export_path: str = ""
     num_thread: int = 0
     import_path: str = ""
@@ -40,8 +45,10 @@ class JobConfig(WickitJobConfig):
     num_history_frame: int = 0
 
 
+# ========== Model Configs ==========
+
 @dataclass
-class ModelConfig(WickitModelConfig):
+class FGModelConfig(WickitModelConfig):
     export_onnx: bool = False
     config: Dict[str, Any] = field(default_factory=dict)
     debug: List[str] = field(default_factory=list)
@@ -52,7 +59,7 @@ class ModelConfig(WickitModelConfig):
 
 
 @dataclass
-class MFRRModelConfig(ModelConfig):
+class MFRRModelConfig(FGModelConfig):
     require_data: List[str] = field(default_factory=list)
     input_buffer: List[str] = field(default_factory=list)
     arch: str = ""
@@ -76,36 +83,41 @@ class MFRRModelConfig(ModelConfig):
     st_color_encoder_output_prefix: str = ""
 
 
+# ========== Trainer Configs ==========
+
 @dataclass
-class TrainerConfig(WickitTrainerConfig):
+class MFRRTrainerConfig(WickitTrainerConfig):
     recurrent_train_start: float = 0.0
     recurrent_train: Dict[str, Any] = field(default_factory=dict)
     recurrent_test: Dict[str, Any] = field(default_factory=dict)
 
 
+# ========== Task Configs (registered to CONFIGS) ==========
+
+@CONFIGS.register_module(name="MFRRTaskConfig")
 @dataclass
-class TaskConfig(WickitTaskConfig):
+class MFRRTaskConfig(WickitTaskConfig):
     log_to_file: bool = False
-    dataset: DatasetConfig = field(default_factory=DatasetConfig)
+    dataset: FGDatasetConfig = field(default_factory=FGDatasetConfig)
     model: MFRRModelConfig = field(default_factory=MFRRModelConfig)
-    trainer: TrainerConfig = field(default_factory=TrainerConfig)
-    job_config: JobConfig = field(default_factory=JobConfig)
+    trainer: MFRRTrainerConfig = field(default_factory=MFRRTrainerConfig)
+    job_config: MFRRJobConfig = field(default_factory=MFRRJobConfig)
     vars: Dict[str, Any] = field(default_factory=dict)
     write_path: str = ""
     exp_name: str = ""
 
 
 __all__ = [
-    "DatasetConfig",
-    "JobConfig",
+    "FGDatasetConfig",
+    "FGModelConfig",
+    "MFRRJobConfig",
     "MFRRModelConfig",
-    "TaskConfig",
+    "MFRRTrainerConfig",
+    "MFRRTaskConfig",
     "LearningRateConfig",
     "LoggingConfig",
     "LossConfig",
-    "ModelConfig",
     "OptimizerConfig",
     "RuntimeConfig",
     "TrainParameterConfig",
-    "TrainerConfig",
 ]

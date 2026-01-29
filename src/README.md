@@ -31,7 +31,7 @@ src/
 The project uses Wickit config utilities directly to load YAML and build typed configs:
 
 - **`config.config_utils`**: Configuration loading utilities (YAML + includes/pipeline/base)
-- **`config.components`**: Typed project config dataclasses (e.g. `TaskConfig`)
+- **`config.components`**: Typed project config dataclasses (e.g. `MFRRTaskConfig`)
 
 ### Data Loading Pipeline
 

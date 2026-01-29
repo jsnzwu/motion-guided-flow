@@ -1,4 +1,5 @@
 job_name: "inference/multi_3_DT_moflow"
+type: MFRRTaskConfig
 config_root_path: "config/"
 base: "model-arch/moflow_base.yaml"
 pipeline: [
@@ -15,6 +16,7 @@ initial_inference: false
 # trainer:
 #     debug_data_flow: false
 trainer:
+    type: MFRRNetRunner
     num_gpu: 2
     recurrent_train:
         block_size: [
@@ -54,6 +56,7 @@ buffer_config:
     max_luminance: !!float 1024.0
     mu: !!float 8.0
 dataset: 
+    type: MFRRNetDataset
     "demodulation_mode": "ess"
     scale_config: {}
     # pin_memory: true
@@ -68,6 +71,7 @@ dataset:
     part_size: 4
     train_scale: !!float 1.0
 model: {
+    "type": "MFRRNetModel",
     model_name: "multi_3_DT_moflow",
     # model_name: "DT_ours",
     "dummy_input_size_h": 720, # 368 480  720 1088 1440 2160

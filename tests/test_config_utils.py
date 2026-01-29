@@ -2,7 +2,7 @@ from pathlib import Path
 
 from config.config_utils import load_yaml_with_replacements, parse_config, parse_config_to_dict
 from wickit.utils.basic.dict import deep_update
-from config.components import TaskConfig
+from config.components import MFRRTaskConfig
 
 
 def _write_yaml(path: Path, content: str) -> None:
@@ -85,5 +85,5 @@ def test_parse_config_returns_task_config(tmp_path: Path) -> None:
         ),
     )
     config = parse_config(str(cfg), root_path="")
-    assert isinstance(config, TaskConfig)
+    assert isinstance(config, MFRRTaskConfig)
     assert config.job_name == "unit_test"

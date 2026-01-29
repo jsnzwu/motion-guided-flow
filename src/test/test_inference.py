@@ -22,6 +22,7 @@ from models.mfrrnet.mfrrnet import MFRRNetModel
 from torch.amp.autocast_mode import autocast as autocast
 from tqdm import tqdm
 from trainers.mfrrnet_trainer import MFRRNetTrainer
+from trainers.mfrrnet_runner import MFRRNetRunner
 from utils.buffer_utils import (aces_tonemapper, flow_to_motion_vector, gamma,
                                 inv_gamma, inv_log_tonemapper, log_tonemapper,
                                 motion_vector_to_flow, to_numpy)

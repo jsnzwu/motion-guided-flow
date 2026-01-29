@@ -5,7 +5,7 @@ import copy
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from config.components import MFRRModelConfig, TaskConfig
+from config.components import MFRRModelConfig, MFRRTaskConfig
 from dataloaders.asset_loader import history_extend
 from datasets.mfrrnet_dataset import MFRRNetDataset
 from models.general.common_structure import Net
@@ -1210,7 +1210,7 @@ def get_dmdl_occ_mask(data):
 class MFRRNetModel(ModelABC):
     def __init__(self, config):
         if isinstance(config, dict):
-            config = TaskConfig.from_dict(config)
+            config = MFRRTaskConfig.from_dict(config)
         config.model.unfreeze()
         super().__init__(config)
 

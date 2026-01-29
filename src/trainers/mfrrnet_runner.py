@@ -4,7 +4,7 @@ import copy
 
 import torch
 import torch.nn.functional as F
-from config.components import TaskConfig
+from config.components import MFRRTaskConfig
 from dataloaders.metadata_task_utils import create_meta_data_list
 from dataloaders.asset_loader import AssetLoader
 from datasets.mfrrnet_dataset import MFRRNetDataset
@@ -21,14 +21,14 @@ from wickit.utils.log import log
 
 
 class MFRRNetRunner(Runner):
-    def __init__(self, config: dict | TaskConfig, model, resume: bool = False):
-        if isinstance(getattr(model, "trainer_config", None), TaskConfig):
+    def __init__(self, config: dict | MFRRTaskConfig, model, resume: bool = False):
+        if isinstance(getattr(model, "trainer_config", None), MFRRTaskConfig):
             config = model.trainer_config
-        elif not isinstance(config, TaskConfig):
+        elif not isinstance(config, MFRRTaskConfig):
             if isinstance(config, dict):
-                config = TaskConfig.from_dict(config)
+                config = MFRRTaskConfig.from_dict(config)
             else:
-                raise TypeError(f"config must be dict or TaskConfig, got {type(config)}")
+                raise TypeError(f"config must be dict or MFRRTaskConfig, got {type(config)}")
         super().__init__(config, model, resume)
         self.output_cache = None
         self.last_output = []
