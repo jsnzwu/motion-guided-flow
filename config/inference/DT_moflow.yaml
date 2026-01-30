@@ -1,5 +1,5 @@
-type: MFRRTaskConfig
 job_name: "inference/DT_moflow"
+type: MFRRTaskConfig
 config_root_path: "config/"
 base: "model-arch/moflow_base.yaml"
 pipeline: [

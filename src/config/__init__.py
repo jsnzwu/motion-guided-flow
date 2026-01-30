@@ -1,4 +1,4 @@
-from config.components import (
+from .components import (
     FGDatasetConfig,
     FGModelConfig,
     MFRRJobConfig,
@@ -12,7 +12,7 @@ from config.components import (
     TrainParameterConfig,
     MFRRTrainerConfig,
 )
-from config.config_utils import load_yaml_with_replacements, parse_config, parse_config_to_dict
+from .config_utils import load_yaml_with_replacements, parse_config, parse_config_to_dict
 
 
 __all__ = [

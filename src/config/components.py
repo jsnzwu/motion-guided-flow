@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
@@ -94,17 +96,46 @@ class MFRRTrainerConfig(WickitTrainerConfig):
 
 # ========== Task Configs (registered to CONFIGS) ==========
 
-@CONFIGS.register_module(name="MFRRTaskConfig")
 @dataclass
 class MFRRTaskConfig(WickitTaskConfig):
     log_to_file: bool = False
-    dataset: FGDatasetConfig = field(default_factory=FGDatasetConfig)
-    model: MFRRModelConfig = field(default_factory=MFRRModelConfig)
-    trainer: MFRRTrainerConfig = field(default_factory=MFRRTrainerConfig)
-    job_config: MFRRJobConfig = field(default_factory=MFRRJobConfig)
+    # Keep field types aligned with wickit base class to avoid invariant override issues in type checkers.
+    # We still build project-specific subclasses via default_factory and from_dict coercion.
+    dataset: WickitDatasetConfig = field(default_factory=FGDatasetConfig)
+    model: WickitModelConfig = field(default_factory=MFRRModelConfig)
+    trainer: WickitTrainerConfig = field(default_factory=MFRRTrainerConfig)
+    job_config: WickitJobConfig = field(default_factory=MFRRJobConfig)
     vars: Dict[str, Any] = field(default_factory=dict)
     write_path: str = ""
     exp_name: str = ""
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> MFRRTaskConfig:
+        # Coerce nested config dicts into project-specific config subclasses so downstream code
+        # can rely on the extended fields.
+        coerced: Dict[str, Any] = dict(data)
+
+        dataset = coerced.get("dataset")
+        if isinstance(dataset, dict):
+            coerced["dataset"] = FGDatasetConfig.from_dict(dataset)
+
+        model = coerced.get("model")
+        if isinstance(model, dict):
+            coerced["model"] = MFRRModelConfig.from_dict(model)
+
+        trainer = coerced.get("trainer")
+        if isinstance(trainer, dict):
+            coerced["trainer"] = MFRRTrainerConfig.from_dict(trainer)
+
+        job_config = coerced.get("job_config")
+        if isinstance(job_config, dict):
+            coerced["job_config"] = MFRRJobConfig.from_dict(job_config)
+
+        return super().from_dict(coerced)
+
+
+# Register explicitly after class definition so MFRRTaskConfig remains a class type for static checkers.
+CONFIGS.register_module(name="MFRRTaskConfig")(MFRRTaskConfig)
 
 
 __all__ = [
