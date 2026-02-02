@@ -17,6 +17,7 @@ from utils.model_utils import get_1d_dim, get_2d_dim
 from utils.parser_utils import parse_buffer_name
 from utils.utils import TensorConcator, add_metaname
 from wickit.models.model_abc import ModelABC
+from wickit.models import MODELS
 from wickit.utils.basic.string import dict_to_string
 from wickit.utils.enums import ForwardMode
 from wickit.utils.ext.warp import get_merged_motion_vector_from_last, warp
@@ -1207,6 +1208,7 @@ def get_dmdl_occ_mask(data):
     return torch.where(torch.abs((warped_gt) - (gt)) > 0.05, torch.ones_like(gt), torch.zeros_like(gt))
 
 
+@MODELS.register_module(name="MFRRNetModel")  # type: ignore[arg-type]
 class MFRRNetModel(ModelABC):
     def __init__(self, config):
         if isinstance(config, dict):

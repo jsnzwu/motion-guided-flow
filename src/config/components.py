@@ -96,6 +96,7 @@ class MFRRTrainerConfig(WickitTrainerConfig):
 
 # ========== Task Configs (registered to CONFIGS) ==========
 
+@CONFIGS.register_module(name="MFRRTaskConfig")  # type: ignore[arg-type]
 @dataclass
 class MFRRTaskConfig(WickitTaskConfig):
     log_to_file: bool = False
@@ -132,10 +133,6 @@ class MFRRTaskConfig(WickitTaskConfig):
             coerced["job_config"] = MFRRJobConfig.from_dict(job_config)
 
         return super().from_dict(coerced)
-
-
-# Register explicitly after class definition so MFRRTaskConfig remains a class type for static checkers.
-CONFIGS.register_module(name="MFRRTaskConfig")(MFRRTaskConfig)
 
 
 __all__ = [

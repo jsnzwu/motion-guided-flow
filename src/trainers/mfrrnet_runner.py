@@ -13,13 +13,14 @@ from utils.buffer_utils import (aces_tonemapper, buffer_data_to_vis,
                                 create_flip_data, inv_log_tonemapper, to_numpy)
 from utils.dataset_utils import DatasetGlobalConfig
 from utils.loss_utils import lpips, psnr, ssim
-from wickit.runner import Runner
+from wickit.runner import RUNNERS, Runner
 from wickit.utils.basic.tensor import (align_channel_buffer, data_as_type,
                                        data_to_device)
 from wickit.utils.enums import ForwardMode
 from wickit.utils.log import log
 
 
+@RUNNERS.register_module(name="MFRRNetRunner")  # type: ignore[arg-type]
 class MFRRNetRunner(Runner):
     def __init__(self, config: dict | MFRRTaskConfig, model, resume: bool = False):
         if isinstance(getattr(model, "trainer_config", None), MFRRTaskConfig):
