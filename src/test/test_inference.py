@@ -371,9 +371,9 @@ if __name__ == '__main__':
         # log.debug(dict_to_string(dataset_cfg['model']['input_buffer']))
         tmp_model = eval(config_train.model.type)(config_train)
 
-        def print_model_weights_dtype(model):
+        def log_model_weights_dtype(model):
             for name, param in model.named_parameters():
-                print(f"Parameter: {name}, Data type: {param.dtype}")
+                log.debug(f"Parameter: {name}, Data type: {param.dtype}")
 
         # 假设 tmp_model 是一个 nn.Module 对象
         models.append(tmp_model)

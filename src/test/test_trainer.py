@@ -18,7 +18,7 @@ from wickit.utils.log import add_prefix_to_log, get_local_rank, log, shutdown_lo
 import torch.distributed as dist
 import torch.distributed
 from models.mfrrnet.mfrrnet import MFRRNetModel
-from trainers.mfrrnet_trainer import MFRRNetTrainer
+from trainers.mfrrnet_runner import MFRRNetRunner
 from torch.profiler import profile, record_function, ProfilerActivity
 
 
@@ -109,7 +109,7 @@ def single_start(local_rank: int, config: dict) -> None:
                 # 销毁进程组
                 dist.destroy_process_group()
             except Exception as e:
-                print(f"Error occurred while destroying process group: {e}")
+                log.debug(f"Error occurred while destroying process group: {e}")
                 # 同样，可以在这里添加其他的错误处理逻辑
             log.debug(f'rank_{get_local_rank()}: destroyed process')
 

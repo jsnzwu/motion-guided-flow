@@ -133,7 +133,6 @@ def buffer_raw_to_data(data, buffer_name):
         "sky_depth": lambda x: x,
     }
     # res = re.search("(s\d+_)*(.+)(?:_[lr])*", buffer_name)
-    # print(res)
     # if res:
     #     buffer_name = res.group(1)
     buffer_name = re.sub(r"((^(s|d|a|u)[\d]+_)|aa_)|(_[lr]$)", "", buffer_name)

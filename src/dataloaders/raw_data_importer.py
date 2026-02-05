@@ -669,4 +669,4 @@ class UE4RawDataLoader:
             assert False, self.job_config
 
     def test_task(self, metadata):
-        print(f"start range: {metadata}")
+        log.debug(f"start range: {metadata}")

@@ -33,50 +33,126 @@ loss: {
         "lpips_st_blend": {"args": ["pred_scene_color_st_blend","scene_color", ], "mode": "lpips", "config": {"tonemap": aces, "skybox_mask": false}},
     },
 }
-"log": {
-    "train_scalar_epoch_sum": 5,
-    "train_image_epoch_sum": 1,
-    "train": {
-        "he_0_prob": {"name": "p0", "fmt": "{:.2g}", "bar_step": false, "bar_epoch": true, "log_step": true, "log_epoch": true},
-        "he_1_prob": {"name": "p1", "fmt": "{:.2g}", "bar_step": false, "bar_epoch": true, "log_step": true, "log_epoch": true},
-        "he_2_prob": {"name": "p2", "fmt": "{:.2g}", "bar_step": false, "bar_epoch": true, "log_step": true, "log_epoch": true},
-        "rendered_prob": {"name": "pr", "fmt": "{:.2g}", "bar_step": false, "bar_epoch": true, "log_step": true, "log_epoch": true},
-        "lr": {"fmt": "{:.3e}", "bar_step": true, "log_step": true},
-        "loss": {"fmt": "{:.3e}", "bar_step": true, "bar_epoch": true, "log_step": true, "log_epoch": true},
-        "rec_loss": {"fmt": "{:.3e}", "bar_step": false, "bar_epoch": false, "log_step": true, "log_epoch": true},
-        "rec_residual_loss": {"fmt": "{:.3e}", "bar_step": false, "bar_epoch": false, "log_step": true, "log_epoch": true},
-        "rec_residual_color_census_loss": {"fmt": "{:.3e}", "bar_step": false, "bar_epoch": false, "log_step": true, "log_epoch": true},
-        "rec_st_color_census_loss": {"fmt": "{:.3e}", "bar_step": false, "bar_epoch": false, "log_step": true, "log_epoch": true},
-        "residual_item_loss": {"fmt": "{:.3e}", "bar_step": false, "bar_epoch": false, "log_step": true, "log_epoch": true},
-        "sky_color_loss": {"fmt": "{:.3e}", "bar_step": false, "bar_epoch": false, "log_step": true, "log_epoch": true},
-        "st_color_loss": {"fmt": "{:.3e}", "bar_step": false, "bar_epoch": false, "log_step": true, "log_epoch": true},
-        "st_alpha_loss": {"fmt": "{:.3e}", "bar_step": false, "bar_epoch": false, "log_step": true, "log_epoch": true},
-        "zero_flow_loss": {"fmt": "{:.3e}", "bar_step": false, "bar_epoch": false, "log_step": true, "log_epoch": true},
-        "zero_flow2_loss": {"fmt": "{:.3e}", "bar_step": false, "bar_epoch": false, "log_step": true, "log_epoch": true},
-        "c1_flow_loss": {"fmt": "{:.3e}", "bar_step": false, "bar_epoch": false, "log_step": true, "log_epoch": true},
-        "psnr": {"fmt": "{:.5g}", "bar_step": true, "bar_epoch": true, "text_epoch": true, "log_step": true, "log_epoch": true},
-        "ssim": {"fmt": "{:.5g}", "bar_step": false, "bar_epoch": false, "text_epoch": true, "log_step": true, "log_epoch": true},
-        "lpips": {"fmt": "{:.5g}", "bar_step": false, "bar_epoch": false, "text_epoch": true, "log_step": true, "log_epoch": true},
-        "psnr_no_st": {"fmt": "{:.5g}", "bar_step": true, "bar_epoch": true, "text_epoch": true, "log_step": true, "log_epoch": true},
-        "ssim_no_st": {"fmt": "{:.5g}", "bar_step": false, "bar_epoch": false, "text_epoch": true, "log_step": true, "log_epoch": true},
-        "lpips_no_st": {"fmt": "{:.5g}", "bar_step": false, "bar_epoch": false, "text_epoch": true, "log_step": true, "log_epoch": true},
-        # "npsnr_st": {"fmt": "{:.5g}", "bar_step": false, "bar_epoch": true, "text_epoch": true, "log_step": true, "log_epoch": true},
-        "psnr_st": {"fmt": "{:.5g}", "bar_step": true, "bar_epoch": true, "text_epoch": true, "log_step": true, "log_epoch": true},
-        "ssim_st": {"fmt": "{:.5g}", "bar_step": false, "bar_epoch": false, "text_epoch": true, "log_step": true, "log_epoch": true},
-        "lpips_st": {"fmt": "{:.5g}", "bar_step": false, "bar_epoch": false, "text_epoch": true, "log_step": true, "log_epoch": true},
-    },
-    "test": {
-        "psnr": {"fmt": "{:.5g}", "bar_step": true, "text_step": true, "bar_epoch": true, "text_epoch": true, "log_step": true, "log_epoch": true},
-        "ssim": {"fmt": "{:.5g}", "bar_step": false, "text_step": true, "bar_epoch": false, "text_epoch": true, "log_step": true, "log_epoch": true},
-        "lpips": {"fmt": "{:.5g}", "bar_step": false, "text_step": true, "bar_epoch": false, "text_epoch": true, "log_step": true, "log_epoch": true},
-        "psnr_no_st": {"fmt": "{:.5g}", "bar_step": true, "bar_epoch": true, "text_epoch": true, "log_step": true, "log_epoch": true},
-        "ssim_no_st": {"fmt": "{:.5g}", "bar_step": false, "bar_epoch": false, "text_epoch": false, "log_step": true, "log_epoch": true},
-        "lpips_no_st": {"fmt": "{:.5g}", "bar_step": false, "bar_epoch": false, "text_epoch": false, "log_step": true, "log_epoch": true},
-        "psnr_st": {"fmt": "{:.5g}", "bar_step": true, "text_step": true, "bar_epoch": true, "text_epoch": true, "log_step": true, "log_epoch": true},
-        "ssim_st": {"fmt": "{:.5g}", "bar_step": false, "text_step": true, "bar_epoch": false, "text_epoch": true, "log_step": true, "log_epoch": true},
-        "lpips_st": {"fmt": "{:.5g}", "bar_step": false, "text_step": true, "bar_epoch": false, "text_epoch": true, "log_step": true, "log_epoch": true},
-        "psnr_st_blend": {"fmt": "{:.5g}", "bar_step": true, "text_step": true, "bar_epoch": true, "text_epoch": true, "log_step": true, "log_epoch": true},
-        "ssim_st_blend": {"fmt": "{:.5g}", "bar_step": false, "text_step": true, "bar_epoch": false, "text_epoch": true, "log_step": true, "log_epoch": true},
-        "lpips_st_blend": {"fmt": "{:.5g}", "bar_step": false, "text_step": true, "bar_epoch": false, "text_epoch": true, "log_step": true, "log_epoch": true},
-    },
-}
+logging:
+  scalar_items:
+    all: {}
+    train:
+      he_0_prob:
+        name: p0
+        fmt: "{:.2g}"
+        channels: [bar_epoch, tb_step, tb_epoch, file_step]
+      he_1_prob:
+        name: p1
+        fmt: "{:.2g}"
+        channels: [bar_epoch, tb_step, tb_epoch, file_step]
+      he_2_prob:
+        name: p2
+        fmt: "{:.2g}"
+        channels: [bar_epoch, tb_step, tb_epoch, file_step]
+      rendered_prob:
+        name: pr
+        fmt: "{:.2g}"
+        channels: [bar_epoch, tb_step, tb_epoch, file_step]
+      lr:
+        fmt: "{:.3e}"
+        channels: [bar_step, tb_step, file_step]
+      loss:
+        fmt: "{:.3e}"
+        channels: [bar_step, bar_epoch, tb_step, tb_epoch, file_step]
+      rec_loss:
+        fmt: "{:.3e}"
+        channels: [tb_step, tb_epoch, file_step]
+      rec_residual_loss:
+        fmt: "{:.3e}"
+        channels: [tb_step, tb_epoch, file_step]
+      rec_residual_color_census_loss:
+        fmt: "{:.3e}"
+        channels: [tb_step, tb_epoch, file_step]
+      rec_st_color_census_loss:
+        fmt: "{:.3e}"
+        channels: [tb_step, tb_epoch, file_step]
+      residual_item_loss:
+        fmt: "{:.3e}"
+        channels: [tb_step, tb_epoch, file_step]
+      sky_color_loss:
+        fmt: "{:.3e}"
+        channels: [tb_step, tb_epoch, file_step]
+      st_color_loss:
+        fmt: "{:.3e}"
+        channels: [tb_step, tb_epoch, file_step]
+      st_alpha_loss:
+        fmt: "{:.3e}"
+        channels: [tb_step, tb_epoch, file_step]
+      zero_flow_loss:
+        fmt: "{:.3e}"
+        channels: [tb_step, tb_epoch, file_step]
+      zero_flow2_loss:
+        fmt: "{:.3e}"
+        channels: [tb_step, tb_epoch, file_step]
+      c1_flow_loss:
+        fmt: "{:.3e}"
+        channels: [tb_step, tb_epoch, file_step]
+      psnr:
+        fmt: "{:.5g}"
+        channels: [bar_step, bar_epoch, tb_step, tb_epoch, file_step, file_epoch]
+      ssim:
+        fmt: "{:.5g}"
+        channels: [tb_step, tb_epoch, file_step, file_epoch]
+      lpips:
+        fmt: "{:.5g}"
+        channels: [tb_step, tb_epoch, file_step, file_epoch]
+      psnr_no_st:
+        fmt: "{:.5g}"
+        channels: [bar_step, bar_epoch, tb_step, tb_epoch, file_step, file_epoch]
+      ssim_no_st:
+        fmt: "{:.5g}"
+        channels: [tb_step, tb_epoch, file_step, file_epoch]
+      lpips_no_st:
+        fmt: "{:.5g}"
+        channels: [tb_step, tb_epoch, file_step, file_epoch]
+      psnr_st:
+        fmt: "{:.5g}"
+        channels: [bar_step, bar_epoch, tb_step, tb_epoch, file_step, file_epoch]
+      ssim_st:
+        fmt: "{:.5g}"
+        channels: [tb_step, tb_epoch, file_step, file_epoch]
+      lpips_st:
+        fmt: "{:.5g}"
+        channels: [tb_step, tb_epoch, file_step, file_epoch]
+    test:
+      psnr:
+        fmt: "{:.5g}"
+        channels: [bar_step, bar_epoch, tb_step, tb_epoch, file_step, file_epoch]
+      ssim:
+        fmt: "{:.5g}"
+        channels: [tb_step, tb_epoch, file_step, file_epoch]
+      lpips:
+        fmt: "{:.5g}"
+        channels: [tb_step, tb_epoch, file_step, file_epoch]
+      psnr_no_st:
+        fmt: "{:.5g}"
+        channels: [bar_step, bar_epoch, tb_step, tb_epoch, file_step, file_epoch]
+      ssim_no_st:
+        fmt: "{:.5g}"
+        channels: [tb_step, tb_epoch, file_step]
+      lpips_no_st:
+        fmt: "{:.5g}"
+        channels: [tb_step, tb_epoch, file_step]
+      psnr_st:
+        fmt: "{:.5g}"
+        channels: [bar_step, bar_epoch, tb_step, tb_epoch, file_step, file_epoch]
+      ssim_st:
+        fmt: "{:.5g}"
+        channels: [tb_step, tb_epoch, file_step, file_epoch]
+      lpips_st:
+        fmt: "{:.5g}"
+        channels: [tb_step, tb_epoch, file_step, file_epoch]
+      psnr_st_blend:
+        fmt: "{:.5g}"
+        channels: [bar_step, bar_epoch, tb_step, tb_epoch, file_step, file_epoch]
+      ssim_st_blend:
+        fmt: "{:.5g}"
+        channels: [tb_step, tb_epoch, file_step, file_epoch]
+      lpips_st_blend:
+        fmt: "{:.5g}"
+        channels: [tb_step, tb_epoch, file_step, file_epoch]

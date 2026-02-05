@@ -14,6 +14,7 @@ from utils.buffer_utils import (aces_tonemapper, buffer_data_to_vis,
 from utils.dataset_utils import DatasetGlobalConfig
 from utils.loss_utils import lpips, psnr, ssim
 from wickit.runner import RUNNERS, Runner
+from wickit.utils.basic.string import dict_to_string
 from wickit.utils.basic.tensor import (align_channel_buffer, data_as_type,
                                        data_to_device)
 from wickit.utils.enums import ForwardMode
@@ -130,7 +131,7 @@ class MFRRNetRunner(Runner):
             self.valid_dataset = None
 
     def get_model_loss(self):
-        log.debug("get model loss using \"-psnr\"")
+        # log.debug("get model loss using \"-psnr\"")
         loss = self.get_avg_info("psnr")
         assert loss is not None
         return loss * -1.0

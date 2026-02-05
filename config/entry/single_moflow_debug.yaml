@@ -1,4 +1,4 @@
-job_name: "251202/multi_3_moflow"
+job_name: "debug/single_moflow"
 type: MFRRTaskConfig
 config_root_path: "config/"
 base: "model-arch/moflow_base.yaml"
@@ -7,46 +7,37 @@ pipeline: [
     "model-pipeline/moflow_loss.yaml",
     "trainers/moflow_trainer.yaml",
 ]
-pre_model: "../checkpoints/moflow_trained_on_single_frame.pt"
+# pre_model: "../checkpoints/FC_moflow.pt"
 
 initial_inference: false
 # log:
-#   test_image_epoch_sum: 125
+#   test_image_epoch_sum: 50
 # trainer:
 #     debug_data_flow: false
 
-trainer:
-    type: MFRRNetRunner
-    num_gpu: 2
-    recurrent_train:
-        block_size: [
-            {'start': 0, 'end': 0.5, 'value': 3, 'ratio': true},
-            {'start': 0.5, 'end': 1, 'value': 3, 'ratio': true},
-        ]
-    recurrent_test:
-        block_size: [
-            {'start': 0, 'end': 1, 'value': 3,'ratio': true},
-        ]
 include: []
 train_parameter: {
-    "epoch": 150,
-    "batch_size": 8,
+    "epoch": 2,
+    "batch_size": 2,
     # "gradient_accumulation_steps": 4,
     "amp": true,
     "train_precision_mode": "fp16",
     "lr_config": {
         "type": "ConstantWarmup",
-        "initial_lr": !!float 1e-4,
-        "max_lr": !!float 1e-4,
-        "min_lr": !!float 1e-5,
+        "initial_lr": !!float 2e-4,
+        "max_lr": !!float 2e-4,
+        "min_lr": !!float 2e-5,
         "warmup_epoch": 0,
         'decay_at_epoch': 0,
         'total_epoch': 200,
     },
 }
 debug: False
+trainer:
+    type: MFRRNetRunner
+    num_gpu: 1
 runtime:
-    cuda_visible_devices: [1, 0]
+    cuda_visible_devices: "0"
 
 output_root_path: "../output/train_output/"
 # clear_output_path: True
@@ -65,23 +56,20 @@ dataset:
     shuffle_loader: false
     augment_loader: false
     flip: true
-    train_num_worker_sum: 8
+    train_num_worker_sum: 2
     block_size: 8
     part_size: 4
     train_scale: !!float 1.0
-    train_scene: [
-        {"name":"FC_T/FC_01_720", "config":{"indice":[], "path_alias": "FC_T"}},
-        {"name":"FC_T/FC_02_720", "config":{"indice":[], "path_alias": "FC_T"}},
-        {"name":"FC_T/FC_03_720", "config":{"indice":[], "path_alias": "FC_T"}},
-        {"name":"FC_T/FC_04_720", "config":{"indice":[], "path_alias": "FC_T"}},
+    "train_scene": [
+        {"name":"FC_T/FC_TEST_720", "config":{"indice":[16], "path_alias": "FC_T"}},
     ]
-    test_scene: [
-        {"name":"FC_T/FC_05_720", "config":{"indice":[600], "path_alias": "FC_T"}},
+    "test_scene": [
+        {"name":"FC_T/FC_TEST_720", "config":{"indice":[16], "path_alias": "FC_T"}},
     ]
+
 model: {
     "type": "MFRRNetModel",
-    model_name: "multi_3_FC_moflow",
-    # model_name: "FC_ours",
+    model_name: "single_FC_moflow",
     "dummy_input_size_h": 720, # 368 480  720 1088 1440 2160
     "dummy_input_size_w": 1280, # 960 880 1280 1920 2560 3840
     "history_encoders": {
