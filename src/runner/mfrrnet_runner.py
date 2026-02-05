@@ -4,11 +4,11 @@ import copy
 
 import torch
 import torch.nn.functional as F
-from config.components import MFRRTaskConfig
-from dataloaders.metadata_task_utils import create_meta_data_list
+from config.moflow_components import MFRRTaskConfig
+from dataloaders.moflow_metadata_task_utils import create_meta_data_list
 from dataloaders.asset_loader import AssetLoader
 from datasets.mfrrnet_dataset import MFRRNetDataset
-from trainers.fe_runner_abc import get_his_recurrent_list
+from runner.fe_runner_abc import get_his_recurrent_list
 from utils.buffer_utils import (aces_tonemapper, buffer_data_to_vis,
                                 create_flip_data, inv_log_tonemapper, to_numpy)
 from utils.dataset_utils import DatasetGlobalConfig

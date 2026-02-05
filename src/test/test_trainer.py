@@ -10,7 +10,7 @@ import os
 from tqdm import tqdm
 import includes.importer
 
-from config.config_utils import load_yaml_with_replacements, parse_config as project_parse_config
+from config.moflow_config_utils import load_yaml_with_replacements, parse_config as project_parse_config
 from utils.utils import Accumulator, seconds_to_str, str_to_seconds
 from wickit.utils.basic.string import dict_to_string
 from utils.config_enhancer import enhance_buffer_config, enhance_train_config, update_config
@@ -18,7 +18,7 @@ from wickit.utils.log import add_prefix_to_log, get_local_rank, log, shutdown_lo
 import torch.distributed as dist
 import torch.distributed
 from models.mfrrnet.mfrrnet import MFRRNetModel
-from trainers.mfrrnet_runner import MFRRNetRunner
+from runner.mfrrnet_runner import MFRRNetRunner
 from torch.profiler import profile, record_function, ProfilerActivity
 
 

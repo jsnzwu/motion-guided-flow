@@ -15,7 +15,7 @@ from wickit.utils.basic.tensor import tensor_as_type_str
 from wickit.utils.basic.string import dict_to_string
 from wickit.utils.log import add_prefix_to_log, log, shutdown_log
 from models.mfrrnet.mfrrnet import MFRRNetModel
-from config.config_utils import parse_config
+from config.moflow_config_utils import parse_config
 
 def convert_onnx(model, patch_loader=None):
     # model.set_eval()

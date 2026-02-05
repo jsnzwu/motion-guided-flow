@@ -25,7 +25,7 @@ from wickit.utils.basic.string import dict_to_string
 from wickit.utils.basic.tensor import data_as_type, data_to_device
 from wickit.utils.log import log
 
-from .metadata_task_utils import create_metadata_by_glob
+from .moflow_metadata_task_utils import create_metadata_by_glob
 from .raw_data_importer import (DatasetFormat, UE4RawDataLoader,
                                 compress_buffer, get_augmented_buffer,
                                 get_extend_buffer, parse_buffer_name,

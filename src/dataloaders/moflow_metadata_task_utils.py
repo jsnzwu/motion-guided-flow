@@ -1,7 +1,10 @@
 from wickit.utils.log import log
 from wickit.dataloaders.metadata import MetaData, MetaDataWithPath
+from wickit.datasets.metadata_task_utils import (
+    dispatch_task_by_metadata as base_dispatch_task_by_metadata,
+    range_task_by_metadata as base_range_task_by_metadata,
+)
 from wickit.utils.basic.string import dict_to_string
-import time
 import glob
 from tqdm import tqdm
 import multiprocessing as mp
@@ -9,39 +12,8 @@ import numpy as np
 import random
 
 
-def range_task_by_metadata(task, metadatas, start_idx: int, end_idx: int):
-    time.sleep(end_idx * 0.001)
-    log.debug(f"start range_task[{start_idx}:{end_idx}]")
-    for i in tqdm(range(start_idx, end_idx)):
-        task(metadatas[i])
-
-
-def dispatch_task_by_metadata(task, metadatas: list[MetaData], num_thread=0):
-    ''' single thread '''
-    if num_thread <= 0:
-        range_task_by_metadata(task, metadatas, 0, len(metadatas))
-        return
-    ''' multi thread '''
-    n_core = num_thread
-    num = len(metadatas)
-    pool = mp.Pool(processes=n_core)
-    thread_part = max(num // n_core + 1, 1)
-    try:
-        log.debug("scene:{} n_core:{} thread_part:{}".format(
-            metadatas[0].dataset_name, n_core, thread_part))
-        _ = [pool.apply_async(range_task_by_metadata, (task, metadatas, i * thread_part,
-                                                       min((i + 1) * thread_part, num), ),
-                              callback=None)
-             for i in range(n_core)]
-        pool.close()
-    except KeyboardInterrupt:
-        pool.terminate()
-    except Exception as e:
-        log.debug(e)
-        pool.terminate()
-    finally:
-        log.debug(f"joined threads: len={len(metadatas)}")
-        pool.join()
+range_task_by_metadata = base_range_task_by_metadata
+dispatch_task_by_metadata = base_dispatch_task_by_metadata
 
 
 def range_task_by_part_name(args):
@@ -238,4 +210,3 @@ config["dataset"]:{dict_to_string(dataset_cfg)}'
     log.debug("test: {} ... {} len={}".format(str(test_lists[0][:3]), str(test_lists[0][-3:]), len(test_lists)))
     log.info("complete creating metadata.")
     return train_list, valid_list, test_lists
-

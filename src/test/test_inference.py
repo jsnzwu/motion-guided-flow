@@ -21,8 +21,7 @@ from models.loss.loss import LossFunction, ssim_per_pixel
 from models.mfrrnet.mfrrnet import MFRRNetModel
 from torch.amp.autocast_mode import autocast as autocast
 from tqdm import tqdm
-from trainers.mfrrnet_trainer import MFRRNetTrainer
-from trainers.mfrrnet_runner import MFRRNetRunner
+from runner.mfrrnet_runner import MFRRNetRunner
 from utils.buffer_utils import (aces_tonemapper, flow_to_motion_vector, gamma,
                                 inv_gamma, inv_log_tonemapper, log_tonemapper,
                                 motion_vector_to_flow, to_numpy)
@@ -30,11 +29,11 @@ from utils.config_enhancer import (enhance_buffer_config, enhance_train_config,
                                    update_config)
 from utils.dataset_utils import (create_de_color, create_warped_buffer,
                                  get_input_filter_list, resize)
-from utils.flip_loss import compute_ldrflip
+from wickit.losses.flip_loss import compute_ldrflip
 from utils.flow_vis import flow_to_image, mv_to_image
 from utils.utils import (Accumulator, create_dir, del_data, del_dict_item,
                          remove_all_in_dir, write_text_to_file)
-from config.config_utils import parse_config
+from config.moflow_config_utils import parse_config
 from wickit.dataloaders.metadata import MetaData
 from wickit.utils.basic.string import dict_to_string
 from wickit.utils.basic.tensor import align_channel_buffer, to_torch

@@ -5,7 +5,7 @@ import copy
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from config.components import MFRRModelConfig, MFRRTaskConfig
+from config.moflow_components import MFRRModelConfig, MFRRTaskConfig
 from dataloaders.asset_loader import history_extend
 from datasets.mfrrnet_dataset import MFRRNetDataset
 from models.general.common_structure import Net

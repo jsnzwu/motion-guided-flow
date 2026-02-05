@@ -16,7 +16,7 @@ from utils.model_utils import get_2d_dim
 from utils.dataset_utils_ess import create_dmdl_color_ess
 # from utils.dataset_utils_ess import create_dmdl_color_ess
 from utils.utils import is_item_all_in_another, create_dir, del_dict_item, get_file_component, remove_all_in_dir, write_text_to_file
-from .metadata_task_utils import dispatch_task_by_metadata, dispatch_task_by_part_name
+from .moflow_metadata_task_utils import dispatch_task_by_metadata, dispatch_task_by_part_name
 from utils.dataset_utils import create_dmdl_color_brdf, create_de_color, create_future_frame, \
     create_history_frame, create_history_warped_buffer, create_scene_color, \
     create_scene_color_no_st, create_sky_color, create_skybox_mask, create_st_color, \

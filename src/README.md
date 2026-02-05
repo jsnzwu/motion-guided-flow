@@ -30,8 +30,8 @@ src/
 
 The project uses Wickit config utilities directly to load YAML and build typed configs:
 
-- **`config.config_utils`**: Configuration loading utilities (YAML + includes/pipeline/base)
-- **`config.components`**: Typed project config dataclasses (e.g. `MFRRTaskConfig`)
+- **`config.moflow_config_utils`**: Configuration loading utilities (YAML + includes/pipeline/base)
+- **`config.moflow_components`**: Typed project config dataclasses (e.g. `MFRRTaskConfig`)
 
 ### Data Loading Pipeline
 
@@ -159,7 +159,7 @@ from wickit.datasets import DatasetABC
 from wickit.models import ModelABC
 
 # Project imports (domain-specific)
-from config.config_utils import parse_config
+from config.moflow_config_utils import parse_config
 from datasets.mfrrnet_dataset import MFRRNetDataset
-from trainers.mfrrnet_runner import MFRRNetRunner
+from runner.mfrrnet_runner import MFRRNetRunner
 ```

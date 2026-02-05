@@ -21,7 +21,7 @@ def find_free_port():
 
 
 if __name__ == "__main__":
-    from config.config_utils import parse_config
+    from config.moflow_config_utils import parse_config
     from wickit.utils.log import log
     from wickit.utils.basic.string import dict_to_string
     parser = argparse.ArgumentParser(description="trainer")
