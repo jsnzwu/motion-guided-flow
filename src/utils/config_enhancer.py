@@ -181,7 +181,7 @@ def enhance_train_config(config):
     
 def update_config(config):
     _ensure_unfrozen(config)
-    num_gpu = config.trainer.num_gpu
+    num_gpu = config.runner.num_gpu
     config.runtime.use_ddp = num_gpu > 1
     config.runtime.use_gpu = num_gpu > 0
     config.runtime.device = "cuda:0" if config.runtime.use_gpu else "cpu"

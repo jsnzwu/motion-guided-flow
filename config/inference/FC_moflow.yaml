@@ -13,7 +13,7 @@ pre_model: "../checkpoints/251201_FC_moflow_1x.pt"
 initial_inference: false
 # log:
 #   test_image_epoch_sum: 50
-# trainer:
+# runner:
 #     debug_data_flow: false
 
 include: []
@@ -35,7 +35,7 @@ train_parameter: {
     },
 }
 debug: False
-trainer:
+runner:
     entry: MFRRNetRunner
     num_gpu: 2
 runtime:

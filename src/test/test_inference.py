@@ -247,7 +247,7 @@ def update_inference_config(config):
     update_config(config)
     config.runtime.local_rank = 0
     config.runtime.use_ddp = False
-    config.runtime.use_gpu = config.trainer.num_gpu > 0
+    config.runtime.use_gpu = config.runner.num_gpu > 0
     config.runtime.device = "cuda:0" if config.runtime.use_gpu else "cpu"
 
 
@@ -334,7 +334,7 @@ if __name__ == '__main__':
     #     {"name":"FC/FC_04", "config":{"indice":[]}},
     # ]
     dataset_cfg.log_to_file = False
-    dataset_trainer = eval(dataset_cfg.trainer.entry)(
+    dataset_trainer = eval(dataset_cfg.runner.entry)(
         dataset_cfg, None, resume=False)
     dataset_trainer.prepare('test')
     dataset_trainer.create_test_dataset(0)
@@ -380,7 +380,7 @@ if __name__ == '__main__':
         # if mode == "interp" or mode == "extrap":
         resume = False
         config_train.log_to_file = False
-        tmp_trainer = eval(config_train.trainer.entry)(
+        tmp_trainer = eval(config_train.runner.entry)(
             config_train, tmp_model, resume=resume)
         tmp_trainer.prepare("test")
         current_write_path = write_path + \
@@ -400,7 +400,7 @@ if __name__ == '__main__':
         tmp_trainer.config.merge({
             "vars": vars_update,
             "write_path": current_write_path,
-            "trainer": {
+            "runner": {
                 "recurrent_test": {
                     "block_size": [
                         {'start': 0, 'end': 1, 'value': block_sizes[i], 'ratio': True},

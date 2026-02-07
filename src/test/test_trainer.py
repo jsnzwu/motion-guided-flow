@@ -35,7 +35,7 @@ def train(config_train):
         
     model = eval(config_train.model.entry)(
         config_train)
-    trainer = eval(config_train.trainer.entry)(
+    trainer = eval(config_train.runner.entry)(
         config_train, model, resume=resume)
     trainer.train()
     # with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
@@ -55,7 +55,7 @@ def test(config_test):
     log.debug(dict_to_string([test_only, resume]))
     model = eval(config_test.model.entry)(
         config_test)
-    trainer = eval(config_test.trainer.entry)(
+    trainer = eval(config_test.runner.entry)(
         config_test, model, resume=resume)
     trainer.test()
 
@@ -88,7 +88,7 @@ def single_start(local_rank: int, config: dict) -> None:
     config_train = deepcopy(config)
     
     ''' wait for seconds to start training '''
-    if (waiting_time:=str_to_seconds((time_str:=config.trainer.wait_to_start))) > 0:
+    if (waiting_time:=str_to_seconds((time_str:=config.runner.wait_to_start))) > 0:
         time_start = time.time()
         time_end = time.time()
         ''' create a custom tqdm bar here and update it manually every 5 seconds '''
@@ -135,14 +135,14 @@ if __name__ == "__main__":
 
     config = parse_config(args.config, root_path="")
     config.unfreeze()
-    config.trainer.wait_to_start = args.wait_to_start
+    config.runner.wait_to_start = args.wait_to_start
     input_config = copy.deepcopy(create_config(args.config))
     # log.debug(dict_to_string(input_config))
     config._input_config = input_config
 
     config.args = vars(args)
     if (args.num_gpu) > 0:
-        config.trainer.num_gpu = args.num_gpu
+        config.runner.num_gpu = args.num_gpu
     update_config(config)
     enhance_train_config(config)
 
@@ -150,7 +150,7 @@ if __name__ == "__main__":
         config.job_name, dict_to_string(config.args, 'args')))
 
     if config.runtime.use_ddp and config.args['train']:
-        config.runtime.world_size = config.trainer.num_gpu
+        config.runtime.world_size = config.runner.num_gpu
         single_start(int(os.environ['LOCAL_RANK']), config)
         # import cProfile
         # cProfile.run("single_start(get_local_rank(), config)", filename=f"result_{get_local_rank()}.out", sort="cumulative")

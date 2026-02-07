@@ -5,7 +5,7 @@ import copy
 import torch
 import torch.nn.functional as F
 from config.moflow_components import MFRRTaskConfig
-from dataloaders.moflow_metadata_task_utils import create_meta_data_list
+from utils.moflow_metadata_task_utils import create_meta_data_list
 from dataloaders.asset_loader import AssetLoader
 from datasets.mfrrnet_dataset import MFRRNetDataset
 from runner.fe_runner_abc import get_his_recurrent_list
@@ -334,7 +334,7 @@ class MFRRNetRunner(Runner):
     def get_block_size(self, mode: ForwardMode) -> int:
         mode = self._normalize_mode(mode)
         mode_name = mode.name
-        block_cfg = self.config['trainer'][f'recurrent_{mode_name}']['block_size']
+        block_cfg = self.config['runner'][f'recurrent_{mode_name}']['block_size']
         for stage in block_cfg:
             cur_epoch_index = self.epoch_index
             total_epoch = self.total_epoch
@@ -382,7 +382,7 @@ class MFRRNetRunner(Runner):
         mode_name = mode.name
         num_he = self.config['model']['history_encoders']['num']
         full_rendered = True
-        recurrent_pred = self.config['trainer'][f'recurrent_{mode_name}']
+        recurrent_pred = self.config['runner'][f'recurrent_{mode_name}']
         his_recurrent_list = get_his_recurrent_list(cur_data_index=self.cur_data_index,
                                                     num_he=num_he,
                                                     block_size=self.get_block_size(mode))
@@ -393,7 +393,7 @@ class MFRRNetRunner(Runner):
                 continue
             if his_recurrent_list[he_id]:
                 if recurrent_pred:
-                    start_recurrent_epoch = int(self.end_epoch * self.config['trainer']['recurrent_train_start'])
+                    start_recurrent_epoch = int(self.end_epoch * self.config['runner']['recurrent_train_start'])
                     if self.epoch_index == start_recurrent_epoch and self.batch_index == 0:
                         self.min_loss = 1e9
                     if not (mode == ForwardMode.train and self.epoch_index < start_recurrent_epoch):
@@ -426,7 +426,7 @@ class MFRRNetRunner(Runner):
     def cache_one_batch_output(self, mode: ForwardMode, epoch_index=None, batch_index=None):
         mode = self._normalize_mode(mode)
         mode_name = mode.name
-        recurrent_pred = self.config['trainer'][f'recurrent_{mode_name}']
+        recurrent_pred = self.config['runner'][f'recurrent_{mode_name}']
         num_he = int(self.net.num_history_encoder)  # type: ignore
         num_dec = int(self.net.num_shade_decoder_layer)  # type: ignore
         if len(self.last_output) > num_he:

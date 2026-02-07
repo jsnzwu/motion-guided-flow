@@ -109,8 +109,7 @@ class FERunnerABC(Runner, ABC):
         # log.info(f"[ShadeTrainerBase] done _cache_one_batch_output, {self.step%self.step_per_epoch}/{self.step_per_epoch}")
 
     def get_block_size(self, mode) -> int:
-           # log.debug(dict_to_string(self.config['trainer']))
-        block_cfg = self.config.trainer[f'recurrent_{mode}']['block_size']
+        block_cfg = self.config.runner[f'recurrent_{mode}']['block_size']
         flag = False
         for stage in block_cfg:
             cur_epoch_index = self.epoch_index

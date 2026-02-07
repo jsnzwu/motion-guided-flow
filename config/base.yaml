@@ -54,7 +54,7 @@ dataset:
   part: []
   history_config: {}
   future_conifg: null
-trainer:
+runner:
   entry: ""
   num_gpu: 0
   wait_to_start: "0"

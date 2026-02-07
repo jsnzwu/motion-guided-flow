@@ -1,4 +1,4 @@
-trainer: 
+runner: 
     "entry": "MFRRNetRunner"
     # "detach_recurrent_data": true,
     "debug_data_flow": true

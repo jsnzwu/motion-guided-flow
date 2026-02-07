@@ -10,10 +10,10 @@ from wickit.config.components import (
     LossConfig,
     ModelConfig as WickitModelConfig,
     OptimizerConfig,
+    RunnerConfig as WickitRunnerConfig,
     RuntimeConfig,
     TaskConfig as WickitTaskConfig,
     TrainParameterConfig,
-    TrainerConfig as WickitTrainerConfig,
 )
 from wickit.config import CONFIGS
 from wickit.logging.config import LoggingConfig
@@ -85,10 +85,10 @@ class MFRRModelConfig(FGModelConfig):
     st_color_encoder_output_prefix: str = ""
 
 
-# ========== Trainer Configs ==========
+# ========== Runner Configs ==========
 
 @dataclass
-class MFRRTrainerConfig(WickitTrainerConfig):
+class MFRRRunnerConfig(WickitRunnerConfig):
     recurrent_train_start: float = 0.0
     recurrent_train: Dict[str, Any] = field(default_factory=dict)
     recurrent_test: Dict[str, Any] = field(default_factory=dict)
@@ -104,7 +104,7 @@ class MFRRTaskConfig(WickitTaskConfig):
     # We still build project-specific subclasses via default_factory and from_dict coercion.
     dataset: WickitDatasetConfig = field(default_factory=FGDatasetConfig)
     model: WickitModelConfig = field(default_factory=MFRRModelConfig)
-    trainer: WickitTrainerConfig = field(default_factory=MFRRTrainerConfig)
+    runner: WickitRunnerConfig = field(default_factory=MFRRRunnerConfig)
     job_config: WickitJobConfig = field(default_factory=MFRRJobConfig)
     vars: Dict[str, Any] = field(default_factory=dict)
     write_path: str = ""
@@ -124,9 +124,9 @@ class MFRRTaskConfig(WickitTaskConfig):
         if isinstance(model, dict):
             coerced["model"] = MFRRModelConfig.from_dict(model)
 
-        trainer = coerced.get("trainer")
-        if isinstance(trainer, dict):
-            coerced["trainer"] = MFRRTrainerConfig.from_dict(trainer)
+        runner = coerced.get("runner")
+        if isinstance(runner, dict):
+            coerced["runner"] = MFRRRunnerConfig.from_dict(runner)
 
         job_config = coerced.get("job_config")
         if isinstance(job_config, dict):
@@ -140,7 +140,7 @@ __all__ = [
     "FGModelConfig",
     "MFRRJobConfig",
     "MFRRModelConfig",
-    "MFRRTrainerConfig",
+    "MFRRRunnerConfig",
     "MFRRTaskConfig",
     "LearningRateConfig",
     "LoggingConfig",

@@ -1,19 +1,13 @@
-from wickit.utils.log import log
-from wickit.dataloaders.metadata import MetaData, MetaDataWithPath
-from wickit.datasets.metadata_task_utils import (
-    dispatch_task_by_metadata as base_dispatch_task_by_metadata,
-    range_task_by_metadata as base_range_task_by_metadata,
-)
-from wickit.utils.basic.string import dict_to_string
 import glob
-from tqdm import tqdm
 import multiprocessing as mp
-import numpy as np
 import random
 
+import numpy as np
+from tqdm import tqdm
+from wickit.dataloaders.metadata import MetaData, MetaDataWithPath
+from wickit.utils.basic.string import dict_to_string
+from wickit.utils.log import log
 
-range_task_by_metadata = base_range_task_by_metadata
-dispatch_task_by_metadata = base_dispatch_task_by_metadata
 
 
 def range_task_by_part_name(args):
@@ -61,11 +55,11 @@ def _get_num_gpu(config) -> int:
         num_gpu = config.get('num_gpu')
         if num_gpu is not None:
             return int(num_gpu)
-        trainer_cfg = config.get('trainer', {})
-        if isinstance(trainer_cfg, dict):
-            return int(trainer_cfg.get('num_gpu', 0))
-        return int(getattr(trainer_cfg, 'num_gpu', 0))
-    return int(config.get('num_gpu', getattr(config.trainer, 'num_gpu', 0)))
+        runner_cfg = config.get('runner', {})
+        if isinstance(runner_cfg, dict):
+            return int(runner_cfg.get('num_gpu', 0))
+        return int(getattr(runner_cfg, 'num_gpu', 0))
+    return int(config.get('num_gpu', getattr(config.runner, 'num_gpu', 0)))
 
 
 def create_meta_data_list(config, start_cutoff=5):

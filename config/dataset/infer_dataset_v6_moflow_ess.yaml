@@ -7,7 +7,7 @@ pipeline: [
     "trainers/moflow_trainer.yaml",
 ]
 include: []
-trainer:
+runner:
     num_gpu: 1
 runtime:
     cuda_visible_devices: [0]

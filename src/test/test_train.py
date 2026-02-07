@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
     program = 'src/test/test_trainer.py'
     config = parse_config(config_file, root_path="")
-    num_gpu = config.trainer.num_gpu
+    num_gpu = config.runner.num_gpu
     port = find_free_port()
 
     # os.environ['CUDA_VISIBLE_DEVICES'] = config['cuda_visible_devices']

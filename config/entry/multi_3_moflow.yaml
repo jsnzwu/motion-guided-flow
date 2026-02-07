@@ -12,10 +12,10 @@ pre_model: "../checkpoints/moflow_trained_on_single_frame.pt"
 initial_inference: false
 # log:
 #   test_image_epoch_sum: 125
-# trainer:
+# runner:
 #     debug_data_flow: false
 
-trainer:
+runner:
     entry: MFRRNetRunner
     num_gpu: 2
     recurrent_train:
