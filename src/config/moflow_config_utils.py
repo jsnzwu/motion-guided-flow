@@ -1,11 +1,14 @@
-from wickit.config.config_utils import (load_yaml_with_replacements,
-                                        parse_config_to_dict)
+from wickit.config.config_utils import (
+    load_yaml_with_replacements,
+    parse_config as _parse_config,
+    parse_config_to_dict,
+)
 from config.moflow_components import MFRRTaskConfig
 
 
 def parse_config(path: str, root_path: str = "") -> MFRRTaskConfig:
-    config_dict = parse_config_to_dict(path, root_path=root_path)
-    return MFRRTaskConfig.from_dict(config_dict)
+    # Ensure project configs are registered before resolving entry.
+    return _parse_config(path, root_path=root_path)
 
 
 __all__ = [

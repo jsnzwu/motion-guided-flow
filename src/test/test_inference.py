@@ -334,7 +334,7 @@ if __name__ == '__main__':
     #     {"name":"FC/FC_04", "config":{"indice":[]}},
     # ]
     dataset_cfg.log_to_file = False
-    dataset_trainer = eval(dataset_cfg.trainer.type)(
+    dataset_trainer = eval(dataset_cfg.trainer.entry)(
         dataset_cfg, None, resume=False)
     dataset_trainer.prepare('test')
     dataset_trainer.create_test_dataset(0)
@@ -368,7 +368,7 @@ if __name__ == '__main__':
         config_train.dataset.enable = False
         config_train.initial_inference = False
         # log.debug(dict_to_string(dataset_cfg['model']['input_buffer']))
-        tmp_model = eval(config_train.model.type)(config_train)
+        tmp_model = eval(config_train.model.entry)(config_train)
 
         def log_model_weights_dtype(model):
             for name, param in model.named_parameters():
@@ -380,7 +380,7 @@ if __name__ == '__main__':
         # if mode == "interp" or mode == "extrap":
         resume = False
         config_train.log_to_file = False
-        tmp_trainer = eval(config_train.trainer.type)(
+        tmp_trainer = eval(config_train.trainer.entry)(
             config_train, tmp_model, resume=resume)
         tmp_trainer.prepare("test")
         current_write_path = write_path + \

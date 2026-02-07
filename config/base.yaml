@@ -1,5 +1,6 @@
 job_name: "month_day/version_modelname_settings"
 config_root_path: "config/"
+entry: "MFRRTaskConfig"
 base: null
 pipeline: [
   # "export/export.yaml"
@@ -9,7 +10,7 @@ include: [
 ]
 train_parameter:
   optimizer: 
-    type: AdamW
+    entry: AdamW
     weight_decay: 0.0
     betas: [0.9, 0.999]
   gradient_accumulation_steps: 1
@@ -29,7 +30,7 @@ clear_output_path: false
 runtime:
   cuda_visible_devices: []
 dataset:
-  type: ""
+  entry: ""
   train_precision_mode: "fp16"
   test_precision_mode: "fp16"
   # recurrent_train: true,
@@ -54,28 +55,28 @@ dataset:
   history_config: {}
   future_conifg: null
 trainer:
-  type: ""
+  entry: ""
   num_gpu: 0
   wait_to_start: "0"
   debug_data_flow: true
   ddp__find_unused_parameters: false
 loss:
-  type: "LossFunction"
+  entry: "LossFunction"
   train_loss: {}
   debug_loss: {}
 logging:
   targets:
-    tb: { type: tensorboard, enable: true }
-    console_inline: { type: console, enable: true, args: { mid: ", " } }
-    console_lines: { type: console, enable: true, args: { mid: "\n" } }
-    file_inline: { type: log_file, enable: true, args: { mid: ", " } }
-    file_lines: { type: log_file, enable: true, args: { mid: "\n" } }
-    bar: { type: bar, enable: true }
-    ckpt: { type: state_dict, enable: true, args: { path: checkpoint_path, clear_latest: true } }
-    ckpt_hist: { type: state_dict, enable: true, args: { path: history_checkpoint_path } }
-    model: { type: state_dict, enable: true, args: { path: model_path, clear_latest: true } }
-    model_best: { type: state_dict, enable: true, args: { path: best_model_path, clear_latest: true } }
-    model_hist: { type: state_dict, enable: true, args: { path: history_model_path } }
+    tb: { entry: tensorboard, enable: true }
+    console_inline: { entry: console, enable: true, args: { mid: ", " } }
+    console_lines: { entry: console, enable: true, args: { mid: "\n" } }
+    file_inline: { entry: log_file, enable: true, args: { mid: ", " } }
+    file_lines: { entry: log_file, enable: true, args: { mid: "\n" } }
+    bar: { entry: bar, enable: true }
+    ckpt: { entry: state_dict, enable: true, args: { path: checkpoint_path, clear_latest: true } }
+    ckpt_hist: { entry: state_dict, enable: true, args: { path: history_checkpoint_path } }
+    model: { entry: state_dict, enable: true, args: { path: model_path, clear_latest: true } }
+    model_best: { entry: state_dict, enable: true, args: { path: best_model_path, clear_latest: true } }
+    model_hist: { entry: state_dict, enable: true, args: { path: history_model_path } }
   scalar_items:
     all: {}
     train:
@@ -92,121 +93,121 @@ logging:
     all:
       - channel: init_info
         event: init
-        trigger: { type: once }
-        collect: { type: text, source: init_info, args: { tag: "info" } }
+        trigger: { entry: once }
+        collect: { entry: init_info, args: { tag: "info" } }
         targets: [tb, file_lines]
       - channel: step_info
         event: init
-        trigger: { type: once }
-        collect: { type: text, source: step_info, args: { tag: "log" } }
+        trigger: { entry: once }
+        collect: { entry: step_info, args: { tag: "log" } }
         targets: [file_lines]
     train:
       - channel: tb_step
         event: step_end
-        trigger: { type: epoch_times, times: 200, spacing: log, offset: 1 }
-        collect: { type: scalars, source: scalars }
+        trigger: { entry: epoch_times, times: 200, spacing: log, offset: 1 }
+        collect: { entry: scalars }
         targets: [tb]
       - channel: bar_desc_step
         event: step_end
-        trigger: { type: step_interval, every: 1, offset: 0 }
-        collect: { type: bar, source: bar_desc }
+        trigger: { entry: step_interval, every: 1, offset: 0 }
+        collect: { entry: bar_desc }
         targets: [bar]
       - channel: file_step
         event: step_end
-        trigger: { type: epoch_times, times: 200, spacing: log, offset: 1 }
-        collect: { type: text, source: text, args: { tag: "train_step" } }
+        trigger: { entry: epoch_times, times: 200, spacing: log, offset: 1 }
+        collect: { entry: text, args: { tag: "train_step" } }
         targets: [file_inline]
       - channel: console_step
         event: step_end
-        trigger: { type: step_interval, every: 8, offset: 1 }
-        collect: { type: text, source: text, args: { tag: "train_step" } }
+        trigger: { entry: step_interval, every: 8, offset: 1 }
+        collect: { entry: text, args: { tag: "train_step" } }
         targets: [console_lines]
       - channel: debug_data_step
         event: step_end
-        trigger: { type: step_interval, every: 1, offset: 0 }
-        collect: { type: text, source: debug_data_step, args: { tag: "debug_step" } }
+        trigger: { entry: step_interval, every: 1, offset: 0 }
+        collect: { entry: debug_data_step, args: { tag: "debug_step" } }
         targets: [console_lines]
       - channel: bar_step
         event: step_end
-        trigger: { type: epoch_times, times: 50, spacing: log, offset: 1 }
-        collect: { type: bar, source: bar }
+        trigger: { entry: epoch_times, times: 50, spacing: log, offset: 1 }
+        collect: { entry: bar }
         targets: [bar]
       - channel: tb_images_step
         event: step_end
-        trigger: { type: epoch_times, times: 10, spacing: log, offset: 1 }
-        collect: { type: images, source: images }
+        trigger: { entry: epoch_times, times: 10, spacing: log, offset: 1 }
+        collect: { entry: images }
         targets: [tb]
 
       - channel: tb_epoch
         event: epoch_end
-        trigger: { type: epoch_interval, every: 1, offset: 0 }
-        collect: { type: scalars, source: scalars }
+        trigger: { entry: epoch_interval, every: 1, offset: 0 }
+        collect: { entry: scalars }
         targets: [tb]
       - channel: file_epoch
         event: epoch_end
-        trigger: { type: epoch_interval, every: 1, offset: 0 }
-        collect: { type: text, source: text, args: { tag: "train_epoch" } }
+        trigger: { entry: epoch_interval, every: 1, offset: 0 }
+        collect: { entry: text, args: { tag: "train_epoch" } }
         targets: [file_inline]
       - channel: console_epoch
         event: epoch_end
-        trigger: { type: epoch_interval, every: 1, offset: 0 }
-        collect: { type: text, source: text, args: { tag: "train_epoch" } }
+        trigger: { entry: epoch_interval, every: 1, offset: 0 }
+        collect: { entry: text, args: { tag: "train_epoch" } }
         targets: [console_inline]
       - channel: bar_epoch
         event: epoch_end
-        trigger: { type: epoch_interval, every: 1, offset: 0 }
-        collect: { type: bar, source: bar }
+        trigger: { entry: epoch_interval, every: 1, offset: 0 }
+        collect: { entry: bar }
         targets: [bar]
 
       - channel: checkpoint_epoch
         event: epoch_end
-        trigger: { type: epoch_interval, every: 1, offset: 0 }
-        collect: { type: state_dict, source: state_dict_checkpoint_epoch }
+        trigger: { entry: epoch_interval, every: 1, offset: 0 }
+        collect: { entry: state_dict_checkpoint_epoch }
         targets: [ckpt]
       - channel: checkpoint_history_epoch
         event: epoch_end
-        trigger: { type: epoch_interval, every: 1, offset: 0 }
-        collect: { type: state_dict, source: state_dict_checkpoint_history_epoch }
+        trigger: { entry: epoch_interval, every: 1, offset: 0 }
+        collect: { entry: state_dict_checkpoint_history_epoch }
         targets: [ckpt_hist]
       - channel: models_epoch
         event: epoch_end
-        trigger: { type: epoch_interval, every: 1, offset: 0 }
-        collect: { type: state_dict, source: models_last_epoch }
+        trigger: { entry: epoch_interval, every: 1, offset: 0 }
+        collect: { entry: models_last_epoch }
         targets: [model]
       - channel: models_best_epoch
         event: epoch_end
-        trigger: { type: epoch_interval, every: 1, offset: 0 }
-        collect: { type: state_dict, source: models_best_epoch }
+        trigger: { entry: epoch_interval, every: 1, offset: 0 }
+        collect: { entry: models_best_epoch }
         targets: [model_best]
       - channel: models_history_epoch
         event: epoch_end
-        trigger: { type: epoch_interval, every: 1, offset: 0 }
-        collect: { type: state_dict, source: models_history_epoch }
+        trigger: { entry: epoch_interval, every: 1, offset: 0 }
+        collect: { entry: models_history_epoch }
         targets: [model_hist]
     test:
       - channel: tb_epoch
         event: epoch_end
-        trigger: { type: epoch_interval, every: 1, offset: 0 }
-        collect: { type: scalars, source: scalars }
+        trigger: { entry: epoch_interval, every: 1, offset: 0 }
+        collect: { entry: scalars }
         targets: [tb]
       - channel: file_epoch
         event: epoch_end
-        trigger: { type: epoch_interval, every: 1, offset: 0 }
-        collect: { type: text, source: text, args: { tag: "test_epoch" } }
+        trigger: { entry: epoch_interval, every: 1, offset: 0 }
+        collect: { entry: text, args: { tag: "test_epoch" } }
         targets: [file_inline]
       - channel: console_epoch
         event: epoch_end
-        trigger: { type: epoch_interval, every: 1, offset: 0 }
-        collect: { type: text, source: text, args: { tag: "test_epoch" } }
+        trigger: { entry: epoch_interval, every: 1, offset: 0 }
+        collect: { entry: text, args: { tag: "test_epoch" } }
         targets: [console_inline]
       - channel: bar_epoch
         event: epoch_end
-        trigger: { type: epoch_interval, every: 1, offset: 0 }
-        collect: { type: bar, source: bar }
+        trigger: { entry: epoch_interval, every: 1, offset: 0 }
+        collect: { entry: bar }
         targets: [bar]
 model:
   model_name: "instance_model_name"
-  type: ""
+  entry: ""
   precision: "fp32"
   inference_precision: "fp32"
   
@@ -215,5 +216,3 @@ model:
 
 
   
-
-

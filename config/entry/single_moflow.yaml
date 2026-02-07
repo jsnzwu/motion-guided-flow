@@ -1,5 +1,5 @@
 job_name: "251202/single_moflow"
-type: MFRRTaskConfig
+entry: MFRRTaskConfig
 config_root_path: "config/"
 base: "model-arch/moflow_base.yaml"
 pipeline: [
@@ -23,7 +23,7 @@ train_parameter: {
     "amp": true,
     "train_precision_mode": "fp16",
     "lr_config": {
-        "type": "ConstantWarmup",
+        "entry": "ConstantWarmup",
         "initial_lr": !!float 2e-4,
         "max_lr": !!float 2e-4,
         "min_lr": !!float 2e-5,
@@ -34,7 +34,7 @@ train_parameter: {
 }
 debug: False
 trainer:
-    type: MFRRNetRunner
+    entry: MFRRNetRunner
     num_gpu: 2
 runtime:
     cuda_visible_devices: [0, 1]
@@ -46,7 +46,7 @@ buffer_config:
     max_luminance: !!float 1024.0
     mu: !!float 8.0
 dataset: 
-    type: MFRRNetDataset
+    entry: MFRRNetDataset
     "demodulation_mode": "ess"
     scale_config: {}
     # pin_memory: true
@@ -72,7 +72,7 @@ dataset:
         ]
 
 model: {
-    "type": "MFRRNetModel",
+    "entry": "MFRRNetModel",
     model_name: "single_FC_moflow",
     "dummy_input_size_h": 720, # 368 480  720 1088 1440 2160
     "dummy_input_size_w": 1280, # 960 880 1280 1920 2560 3840

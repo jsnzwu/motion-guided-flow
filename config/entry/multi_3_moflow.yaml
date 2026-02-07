@@ -1,5 +1,5 @@
 job_name: "251202/multi_3_moflow"
-type: MFRRTaskConfig
+entry: MFRRTaskConfig
 config_root_path: "config/"
 base: "model-arch/moflow_base.yaml"
 pipeline: [
@@ -16,7 +16,7 @@ initial_inference: false
 #     debug_data_flow: false
 
 trainer:
-    type: MFRRNetRunner
+    entry: MFRRNetRunner
     num_gpu: 2
     recurrent_train:
         block_size: [
@@ -35,7 +35,7 @@ train_parameter: {
     "amp": true,
     "train_precision_mode": "fp16",
     "lr_config": {
-        "type": "ConstantWarmup",
+        "entry": "ConstantWarmup",
         "initial_lr": !!float 1e-4,
         "max_lr": !!float 1e-4,
         "min_lr": !!float 1e-5,
@@ -55,7 +55,7 @@ buffer_config:
     max_luminance: !!float 1024.0
     mu: !!float 8.0
 dataset: 
-    type: MFRRNetDataset
+    entry: MFRRNetDataset
     "demodulation_mode": "ess"
     scale_config: {}
     # pin_memory: true
@@ -79,7 +79,7 @@ dataset:
         {"name":"FC_T/FC_05_720", "config":{"indice":[600], "path_alias": "FC_T"}},
     ]
 model: {
-    "type": "MFRRNetModel",
+    "entry": "MFRRNetModel",
     model_name: "multi_3_FC_moflow",
     # model_name: "FC_ours",
     "dummy_input_size_h": 720, # 368 480  720 1088 1440 2160

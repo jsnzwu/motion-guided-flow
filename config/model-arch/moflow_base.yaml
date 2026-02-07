@@ -1,4 +1,5 @@
 job_name: "mfrrnet_v6"
+entry: "MFRRTaskConfig"
 base: "base.yaml"
 include: [
   "includes/dataset_export_data_st.yaml",
@@ -36,7 +37,7 @@ dataset: {
 model: {
     # "fp16":true,
     "model_name": "mfrrnet",
-    type: "MFRRNetModel",
+    entry: "MFRRNetModel",
     "dummy_input_size_h": 720,
     "dummy_input_size_w": 1280,
     "arch": "v6",

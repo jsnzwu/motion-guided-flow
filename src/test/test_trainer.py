@@ -33,9 +33,9 @@ def parse_config(path: str, root_path: str = ""):
 def train(config_train):
     resume = config_train['args'].get('resume', False)
         
-    model = eval(config_train.model.type)(
+    model = eval(config_train.model.entry)(
         config_train)
-    trainer = eval(config_train.trainer.type)(
+    trainer = eval(config_train.trainer.entry)(
         config_train, model, resume=resume)
     trainer.train()
     # with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
@@ -53,9 +53,9 @@ def test(config_test):
     if test_only:
         resume = False
     log.debug(dict_to_string([test_only, resume]))
-    model = eval(config_test.model.type)(
+    model = eval(config_test.model.entry)(
         config_test)
-    trainer = eval(config_test.trainer.type)(
+    trainer = eval(config_test.trainer.entry)(
         config_test, model, resume=resume)
     trainer.test()
 

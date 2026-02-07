@@ -92,7 +92,7 @@ if __name__ == "__main__":
     ''' important for export onnx in fp16 !! '''
     config_onnx.model.inference_precision = "fp16"
     # config_onnx["inital_inference"] = False
-    model = eval(config_onnx.model.type)(config_onnx)
+    model = eval(config_onnx.model.entry)(config_onnx)
     # import cProfile
     # cProfile.run("model = eval(config_onnx['model']['class'])(config_onnx)", filename=f"profile.out", sort="cumulative")
     # model = TestNet().cuda()
