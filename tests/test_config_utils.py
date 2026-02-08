@@ -1,8 +1,12 @@
 from pathlib import Path
 
-from config.config_utils import load_yaml_with_replacements, parse_config, parse_config_to_dict
+from config import (
+    MFRRTaskConfig,
+    load_yaml_with_replacements,
+    parse_config,
+    parse_config_to_dict,
+)
 from wickit.utils.basic.dict import deep_update
-from config.components import MFRRTaskConfig
 
 
 def _write_yaml(path: Path, content: str) -> None:
@@ -44,16 +48,17 @@ def test_parse_config_returns_task_config(tmp_path: Path) -> None:
         "\n".join(
             [
                 "job_name: unit_test",
-                "trainer:",
-                "  type: DummyTrainer",
+                "entry: MFRRTaskConfig",
+                "runner:",
+                "  entry: DummyRunner",
                 "  num_gpu: 1",
                 "dataset:",
-                "  type: DummyDataset",
+                "  entry: DummyDataset",
                 "  train_num_worker_sum: 2",
                 "  history_config:",
                 "    num: 1",
                 "model:",
-                "  type: DummyModel",
+                "  entry: DummyModel",
                 "  model_name: dummy",
                 "  inference_precision: fp32",
                 "  dummy_input_size_h: 1",

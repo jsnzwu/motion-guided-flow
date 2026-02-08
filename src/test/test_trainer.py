@@ -17,8 +17,8 @@ from utils.config_enhancer import enhance_buffer_config, enhance_train_config, u
 from wickit.utils.log import add_prefix_to_log, get_local_rank, log, shutdown_log
 import torch.distributed as dist
 import torch.distributed
-from models.mfrrnet.mfrrnet import MFRRNetModel
-from runner.mfrrnet_runner import MFRRNetRunner
+from wickit.models import MODELS
+from wickit.runner import RUNNERS
 from torch.profiler import profile, record_function, ProfilerActivity
 
 
@@ -32,11 +32,9 @@ def parse_config(path: str, root_path: str = ""):
 
 def train(config_train):
     resume = config_train['args'].get('resume', False)
-        
-    model = eval(config_train.model.entry)(
-        config_train)
-    trainer = eval(config_train.runner.entry)(
-        config_train, model, resume=resume)
+
+    model = MODELS.build(config_train.model.entry, config_train)
+    trainer = RUNNERS.build(config_train.runner.entry, config_train, model, resume=resume)
     trainer.train()
     # with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
     #             # profile_memory=True, record_shapes=True) as prof:
@@ -53,10 +51,8 @@ def test(config_test):
     if test_only:
         resume = False
     log.debug(dict_to_string([test_only, resume]))
-    model = eval(config_test.model.entry)(
-        config_test)
-    trainer = eval(config_test.runner.entry)(
-        config_test, model, resume=resume)
+    model = MODELS.build(config_test.model.entry, config_test)
+    trainer = RUNNERS.build(config_test.runner.entry, config_test, model, resume=resume)
     trainer.test()
 
 

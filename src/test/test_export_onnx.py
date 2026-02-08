@@ -14,7 +14,7 @@ from utils.config_enhancer import enhance_train_config, initialize_recipe
 from wickit.utils.basic.tensor import tensor_as_type_str
 from wickit.utils.basic.string import dict_to_string
 from wickit.utils.log import add_prefix_to_log, log, shutdown_log
-from models.mfrrnet.mfrrnet import MFRRNetModel
+from wickit.models import MODELS
 from config.moflow_config_utils import parse_config
 
 def convert_onnx(model, patch_loader=None):
@@ -92,9 +92,9 @@ if __name__ == "__main__":
     ''' important for export onnx in fp16 !! '''
     config_onnx.model.inference_precision = "fp16"
     # config_onnx["inital_inference"] = False
-    model = eval(config_onnx.model.entry)(config_onnx)
+    model = MODELS.build(config_onnx.model.entry, config_onnx)
     # import cProfile
-    # cProfile.run("model = eval(config_onnx['model']['class'])(config_onnx)", filename=f"profile.out", sort="cumulative")
+    # cProfile.run("model = MODELS.build(config_onnx.model.entry, config_onnx)", filename="profile.out", sort="cumulative")
     # model = TestNet().cuda()
     # model(model.dummy_input)
     convert_onnx(model)

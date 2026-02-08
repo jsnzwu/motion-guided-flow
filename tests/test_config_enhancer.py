@@ -1,4 +1,4 @@
-from config.components import MFRRTaskConfig
+from config import MFRRTaskConfig
 from utils.config_enhancer import enhance_train_config, update_config
 
 
@@ -30,17 +30,18 @@ def _minimal_buffer_config() -> dict:
 
 def _minimal_config_dict() -> dict:
     return {
+        "entry": "MFRRTaskConfig",
         "job_name": "enhancer_test",
-        "trainer": {"type": "DummyTrainer", "num_gpu": 2, "wait_to_start": "0"},
+        "runner": {"entry": "DummyRunner", "num_gpu": 2, "wait_to_start": "0"},
         "dataset": {
-            "type": "DummyDataset",
+            "entry": "DummyDataset",
             "train_num_worker_sum": 4,
             "train_num_worker": 4,
             "history_config": {"num": 1},
             "scale_config": {},
             "augment_loader": True,
         },
-        "model": {"type": "DummyModel", "require_data": ["scene_color"]},
+        "model": {"entry": "DummyModel", "require_data": ["scene_color"]},
         "train_parameter": {"batch_size": 4},
         "job_config": {"export_path": "/tmp"},
         "buffer_config": _minimal_buffer_config(),
