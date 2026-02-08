@@ -31,7 +31,7 @@ from wickit.losses.flip_loss import compute_ldrflip
 from utils.flow_vis import flow_to_image, mv_to_image
 from utils.utils import (Accumulator, create_dir, del_data, del_dict_item,
                          remove_all_in_dir, write_text_to_file)
-from config.moflow_config_utils import parse_config
+from wickit.config import load_task_config
 from wickit.dataloaders.metadata import MetaData
 from wickit.models import MODELS
 from wickit.runner import RUNNERS
@@ -278,12 +278,12 @@ if __name__ == '__main__':
 
     metric = ['psnr', 'ssim', 'lpips']
     if mode == "moflow":
-        dataset_cfg = parse_config("config/dataset/infer_dataset_v6_moflow_ess.yaml", root_path="")
+        dataset_cfg = load_task_config("config/dataset/infer_dataset_v6_moflow_ess")
         if args.config:
             config_path = [args.config]
         else:
             config_path = [
-                "config/inference/DT_moflow.yaml",
+                "config/inference/DT_moflow",
                 # "config/inference/FC_moflow.yaml",
                 # "config/inference/multi_3_DT_moflow.yaml",
             ]
@@ -291,6 +291,7 @@ if __name__ == '__main__':
         raise NotImplementedError(f"{mode} is not supported (list: moflow)")
 
     config_path = [os.path.normpath(path.replace("\\", os.sep)) for path in config_path]
+    loaded_configs = [load_task_config(path) for path in config_path]
 
     if hasattr(dataset_cfg, "unfreeze") and getattr(dataset_cfg, "_frozen", False):
         dataset_cfg.unfreeze()
@@ -355,7 +356,7 @@ if __name__ == '__main__':
     else:
         block_sizes = [block_size for _ in range(num_cfg)]
     for i in range(len(config_path)):
-        tmp_config = parse_config(config_path[i], root_path="")
+        tmp_config = copy.deepcopy(loaded_configs[i])
         # log.debug(dict_to_string(tmp_config.model.input_buffer))
         update_inference_config(tmp_config)
         enhance_train_config(tmp_config)

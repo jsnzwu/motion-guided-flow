@@ -13,6 +13,7 @@ from .moflow_components import (
     MFRRRunnerConfig,
 )
 from .moflow_config_utils import load_yaml_with_replacements, parse_config, parse_config_to_dict
+from wickit.config import load_task_config
 
 
 __all__ = [
@@ -29,6 +30,7 @@ __all__ = [
     "RuntimeConfig",
     "TrainParameterConfig",
     "load_yaml_with_replacements",
+    "load_task_config",
     "parse_config",
     "parse_config_to_dict",
 ]

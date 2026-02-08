@@ -10,7 +10,8 @@ import os
 from tqdm import tqdm
 import includes.importer
 
-from config.moflow_config_utils import load_yaml_with_replacements, parse_config as project_parse_config
+from wickit.config import load_task_config
+from config_defines.moflow_config_utils import load_yaml_with_replacements as load_yaml
 from utils.utils import Accumulator, seconds_to_str, str_to_seconds
 from wickit.utils.basic.string import dict_to_string
 from utils.config_enhancer import enhance_buffer_config, enhance_train_config, update_config
@@ -22,12 +23,13 @@ from wickit.runner import RUNNERS
 from torch.profiler import profile, record_function, ProfilerActivity
 
 
-def create_config(path: str) -> dict:
-    return load_yaml_with_replacements(path)
-
-
-def parse_config(path: str, root_path: str = ""):
-    return project_parse_config(path, root_path=root_path)
+def create_config(path: str, loaded_config=None) -> dict:
+    lower_path = path.lower()
+    if lower_path.endswith(".yaml") or lower_path.endswith(".yml"):
+        return load_yaml(path)
+    if loaded_config is not None and hasattr(loaded_config, "to_dict"):
+        return loaded_config.to_dict()
+    return {}
 
 
 def train(config_train):
@@ -129,10 +131,10 @@ if __name__ == "__main__":
     parser.add_argument('--resume', action='store_true', default=False)
     args = parser.parse_args()
 
-    config = parse_config(args.config, root_path="")
+    config = load_task_config(args.config)
     config.unfreeze()
     config.runner.wait_to_start = args.wait_to_start
-    input_config = copy.deepcopy(create_config(args.config))
+    input_config = copy.deepcopy(create_config(args.config, config))
     # log.debug(dict_to_string(input_config))
     config._input_config = input_config
 

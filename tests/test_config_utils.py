@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from config import (
+from config_defines import (
     MFRRTaskConfig,
     load_yaml_with_replacements,
     parse_config,

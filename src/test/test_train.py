@@ -21,7 +21,7 @@ def find_free_port():
 
 
 if __name__ == "__main__":
-    from config.moflow_config_utils import parse_config
+    from wickit.config import load_task_config
     from wickit.utils.log import log
     from wickit.utils.basic.string import dict_to_string
     parser = argparse.ArgumentParser(description="trainer")
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     config_file = args.config
 
     program = 'src/test/test_trainer.py'
-    config = parse_config(config_file, root_path="")
+    config = load_task_config(config_file)
     num_gpu = config.runner.num_gpu
     port = find_free_port()
 

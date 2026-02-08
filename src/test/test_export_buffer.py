@@ -6,7 +6,7 @@ from utils.config_enhancer import enhance_buffer_config
 from dataloaders.raw_data_importer import UE4RawDataLoader
 from wickit.utils.log import log
 from wickit.utils.basic.string import dict_to_string
-from config.moflow_config_utils import parse_config
+from config_defines.moflow_config_utils import parse_config
 
 if __name__ == "__main__":
 

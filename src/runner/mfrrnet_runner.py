@@ -4,7 +4,7 @@ import copy
 
 import torch
 import torch.nn.functional as F
-from config.moflow_components import MFRRTaskConfig
+from config_defines.moflow_components import MFRRTaskConfig
 from utils.moflow_metadata_task_utils import create_meta_data_list
 from dataloaders.asset_loader import AssetLoader
 from datasets.mfrrnet_dataset import MFRRNetDataset

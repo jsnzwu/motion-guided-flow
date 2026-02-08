@@ -1,4 +1,4 @@
-from config import MFRRTaskConfig
+from config_defines import MFRRTaskConfig
 from utils.config_enhancer import enhance_train_config, update_config
 
 
