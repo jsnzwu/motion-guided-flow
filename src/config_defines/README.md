@@ -1,22 +1,28 @@
 # config_defines
 
-Project-specific configuration dataclasses and legacy YAML bridge helpers.
+Project-specific config extensions for MFRR, based on `wickit.config` Pydantic models.
 
-## Contents
-- `moflow_components.py`: Defines `MFRRTaskConfig` and related dataclasses (e.g., `FGDatasetConfig`, `FGModelConfig`, `MFRRRunnerConfig`), registered in `wickit.config.CONFIGS`.
-- `moflow_config_utils.py`: YAML bridge helpers returning registry-resolved config objects (e.g., `MFRRTaskConfig`).
+## Current State
+- `moflow_components.py` defines `MFRRTaskConfig` and project sub-models on top of `ConfigStruct`.
+- Runtime config model path is Pydantic-only.
+- Unknown fields are rejected (`extra="forbid"`).
 
-## Pyconfig Module Protocol
-- Preferred protocol: implement `build_config() -> TaskConfig` in each pyconfig module.
-- Compatible fallback: module-level `CONFIG: TaskConfig`.
-- Priority rule: when both exist, loader always uses `build_config()`.
+## Bridge Policy
+- `moflow_config_utils.parse_config(...)` is bridge-only.
+- Bridge implementation is limited to:
+  - YAML parse to dict (`parse_config_to_dict`)
+  - dict to typed model (`MFRRTaskConfig.model_validate`)
+- Runtime main entry must not call bridge parse directly; runtime uses `load_task_config(...)`.
 
-## `--config` Canonical Spec
-- Canonical `--config` value is suffixless pyconfig spec, e.g. `config/inference/DT_moflow`.
-- Loader only auto-appends `.py` for suffixless specs.
-- `.py` specs are loaded as pyconfig modules directly.
+## Update Rule
+- Config updates must use controlled API with re-validate semantics (`copy_update`).
+- Do not use direct shortcut updates that bypass validation.
 
-## Compatibility Policy (#2)
-- Optional compatibility adapter is allowed only inside loader implementation.
-- If compatibility path is enabled, it must emit deprecation logs and remain auditable.
-- Compatibility code must stay removable in later cleanup phases.
+## Runtime Boundary
+- Runtime `cfg` is read-only.
+- Mutable runtime state must be isolated from config.
+
+## Bridge Exit Criteria
+- No runtime entry path calls `parse_config(...)` bridge.
+- No training/inference launcher path depends on YAML bridge output.
+- When both are satisfied, bridge helper can be removed.

@@ -14,6 +14,10 @@ import torch.nn.functional as F
 # import cv2
 
 
+def _is_mapping_like(value: object) -> bool:
+    return isinstance(value, Mapping) or (hasattr(value, "keys") and hasattr(value, "__getitem__"))
+
+
 def get_input_filter_list(config: dict) -> list:
     ret = set()
     res = []
@@ -24,7 +28,7 @@ def get_input_filter_list(config: dict) -> list:
                 if item not in ret:
                     ret.add(item)
                     res.append(item)
-        elif isinstance(config[k], Mapping):
+        elif _is_mapping_like(config[k]):
             tmp_res += get_input_filter_list(config[k])
     for tmp_item in tmp_res:
         if tmp_item not in ret:

@@ -42,8 +42,7 @@ if __name__ == "__main__":
 
     # os.environ['CUDA_VISIBLE_DEVICES'] = config['cuda_visible_devices']
     prefix = ""
-    type_input = str(config.runtime.cuda_visible_devices)
-    type_input = type_input.replace(" ", "").replace("(", "").replace(")", "").replace("\\", "")
+    type_input = ",".join(map(str, config.runtime.cuda_visible_devices))
     os.environ['CUDA_VISIBLE_DEVICES'] = type_input
     os.environ['MKL_NUM_THREADS'] = '1'
     os.environ['OMP_NUM_THREADS'] = '1'

@@ -274,8 +274,10 @@ class MRFFNet(Net):
         self.method = self.config.method
         self.arch = self.config.arch
         self.num_history_encoder = self.config.history_encoders['num']
-        self.config.shade_decoder = self.config[f'shade_decoder__{self.method}']
-        self.num_shade_decoder_layer = len(self.config.shade_decoder['struct']['decoder'])
+        shade_decoder_cfg = copy.deepcopy(self.config[f'shade_decoder__{self.method}'])
+        scene_color_encoder_cfg = copy.deepcopy(self.config.scene_color_encoder)
+        gbuffer_encoder_cfg = copy.deepcopy(self.config.gbuffer_encoder)
+        self.num_shade_decoder_layer = len(shade_decoder_cfg['struct']['decoder'])
 
         ''' feature configuration '''
 
@@ -362,19 +364,18 @@ class MRFFNet(Net):
 
         ''' output channel configuration '''
         if not self.enable_input_block:
-            del self.config.scene_color_encoder['struct']['input']
-            del self.config.st_color_encoder['struct']['input']
-            del self.config.gbuffer_encoder['struct']['input']
+            del scene_color_encoder_cfg['struct']['input']
+            del gbuffer_encoder_cfg['struct']['input']
 
         ''' output channel configuration '''
         if not self.enable_output_block:
-            del self.config.shade_decoder['struct']['output']
+            del shade_decoder_cfg['struct']['output']
             out_channel = int(self.enable_lmv_res) + \
                 int(self.enable_st_lmv_res)
-            self.config.shade_decoder['out_channel'] = out_channel * 2
+            shade_decoder_cfg['out_channel'] = out_channel * 2
 
         ''' network name configuration '''
-        self.ge_pf = self.config.gbuffer_encoder['output_prefix']
+        self.ge_pf = gbuffer_encoder_cfg['output_prefix']
         # self.sce_pf = self.config['scene_color_encoder_output_prefix']
         self.he_pfs = [item for item in self.config.history_encoders['output_prefixs']]
         self.he_st_pfs = [item for item in self.config.history_st_encoders['output_prefixs']]
@@ -387,25 +388,25 @@ class MRFFNet(Net):
         from models.mfrrnet.archs import (DecoderBlock, ShadeNetDecoder,
                                           ShadeNetEncoder)
 
-        if self.config.gbuffer_encoder['class'] == 'ShadeNetEncoder':
-            self.gbuffer_encoder = ShadeNetEncoder(self.config.gbuffer_encoder)
+        if gbuffer_encoder_cfg['class'] == 'ShadeNetEncoder':
+            self.gbuffer_encoder = ShadeNetEncoder(gbuffer_encoder_cfg)
         else:
-            raise Exception('Wrong class name {} for ShadeNetEncoder!'.format(self.config.gbuffer_encoder['class']))
+            raise Exception('Wrong class name {} for ShadeNetEncoder!'.format(gbuffer_encoder_cfg['class']))
         # log.debug(dict_to_string([self.config['gbuffer_encoder'], self.gbuffer_encoder.in_channel]))
 
-        if self.config.scene_color_encoder['class'] == 'ShadeNetEncoder':
-            self.config.scene_color_encoder['gbuffer_channel'] = [channels[-1]
-                                                                     for channels in self.config.gbuffer_encoder['struct']['encoder']]
-            self.scene_color_encoder = ShadeNetEncoder(self.config.scene_color_encoder)
+        if scene_color_encoder_cfg['class'] == 'ShadeNetEncoder':
+            scene_color_encoder_cfg['gbuffer_channel'] = [channels[-1]
+                                                          for channels in gbuffer_encoder_cfg['struct']['encoder']]
+            self.scene_color_encoder = ShadeNetEncoder(scene_color_encoder_cfg)
         else:
-            raise Exception('Wrong class name {} for ShadeNetEncoder!'.format(self.config.scene_color_encoder['class']))
+            raise Exception('Wrong class name {} for ShadeNetEncoder!'.format(scene_color_encoder_cfg['class']))
         
         # log.debug(dict_to_string([self.config['scene_color_encoder'], self.scene_color_encoder.in_channel]))
 
         ''' accumulate concat channel of history_encoders '''
 
         skip_first_layer = self.enable_input_block
-        encoders_skip_channel = copy.deepcopy(self.config.gbuffer_encoder['encoders_skip_channel'][skip_first_layer:])
+        encoders_skip_channel = copy.deepcopy(gbuffer_encoder_cfg['encoders_skip_channel'][skip_first_layer:])
         # log.debug(encoders_skip_channel)
         for i in range(len(encoders_skip_channel)):
             extra_channel = 0
@@ -431,13 +432,13 @@ class MRFFNet(Net):
                 # log.debug(f'layer={layer_id}, extra_cat_channel={extra_channel}, rmv_fused:{rmv_fused}, st_rmv_fuse:{st_rmv_fused}')
             extra_channel *= self.layer_flow_channel
             encoders_skip_channel[i] += extra_channel
-            encoders_skip_channel[i] += (self.config.scene_color_encoder['encoders_skip_channel'][skip_first_layer:]
+            encoders_skip_channel[i] += (scene_color_encoder_cfg['encoders_skip_channel'][skip_first_layer:]
                                          [i]) * self.num_history_encoder
 
         # log.debug(dict_to_string(encoders_skip_channel))
         ''' add extra channel to the decoder layer in each pyramid'''
-        decoder_struct = self.config.shade_decoder['struct']['decoder']
-        if self.config.shade_decoder['enable_extra_channel']:
+        decoder_struct = shade_decoder_cfg['struct']['decoder']
+        if shade_decoder_cfg['enable_extra_channel']:
             # log.debug(dict_to_string(decoder_struct))
             for i in range(len(decoder_struct)):
                 extra_channel = 0
@@ -455,13 +456,13 @@ class MRFFNet(Net):
 
             # log.debug(dict_to_string(decoder_struct))
 
-        self.config.shade_decoder['encoders_skip_channel'] = encoders_skip_channel
-        self.config.shade_decoder['num_he'] = self.num_history_encoder
+        shade_decoder_cfg['encoders_skip_channel'] = encoders_skip_channel
+        shade_decoder_cfg['num_he'] = self.num_history_encoder
         
-        if self.config.shade_decoder['class'] == 'ShadeNetDecoder':
-            self.shade_decoder = ShadeNetDecoder(self.config.shade_decoder, DecoderBlock)
+        if shade_decoder_cfg['class'] == 'ShadeNetDecoder':
+            self.shade_decoder = ShadeNetDecoder(shade_decoder_cfg, DecoderBlock)
         else:
-            raise Exception('Wrong class name {} for ShadeNetDecoder!'.format(self.config['shade_decoder']))
+            raise Exception('Wrong class name {} for ShadeNetDecoder!'.format(shade_decoder_cfg))
 
         #     self.shade_decoder = model_to_half(self.shade_decoder)
         if self.enable_recurrent_d2e:
@@ -470,9 +471,9 @@ class MRFFNet(Net):
             #     self.config['shade_decoder']['struct']['decoder'])
 
             self.recurrent_blocks = create_d2e_ru_blocks(
-                self.config['scene_color_encoder'],
-                self.config['gbuffer_encoder'],
-                self.config['shade_decoder'],
+                scene_color_encoder_cfg,
+                gbuffer_encoder_cfg,
+                shade_decoder_cfg,
                 norm=self.enable_recurrent_d2e_layer_norm)
         self.get_feature_list()
         mode_key_list = ['feature_warp_mode', 'rmv_downsample_mode', 'lmv_warp_mode', 'tmv_warp_mode']
@@ -1213,7 +1214,6 @@ class MFRRNetModel(ModelABC):
     def __init__(self, config):
         if isinstance(config, dict):
             config = MFRRTaskConfig.from_dict(config)
-        config.model.unfreeze()
         super().__init__(config)
 
     def get_dummy_input(self, bs=1):

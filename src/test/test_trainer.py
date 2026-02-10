@@ -11,7 +11,7 @@ from tqdm import tqdm
 import includes.importer
 
 from wickit.config import load_task_config
-from config_defines.moflow_config_utils import load_yaml_with_replacements as load_yaml
+from wickit.config import copy_update
 from utils.utils import Accumulator, seconds_to_str, str_to_seconds
 from wickit.utils.basic.string import dict_to_string
 from utils.config_enhancer import enhance_buffer_config, enhance_train_config, update_config
@@ -21,12 +21,10 @@ import torch.distributed
 from wickit.models import MODELS
 from wickit.runner import RUNNERS
 from torch.profiler import profile, record_function, ProfilerActivity
+from runner.runtime_state import RuntimeState
 
 
 def create_config(path: str, loaded_config=None) -> dict:
-    lower_path = path.lower()
-    if lower_path.endswith(".yaml") or lower_path.endswith(".yml"):
-        return load_yaml(path)
     if loaded_config is not None and hasattr(loaded_config, "to_dict"):
         return loaded_config.to_dict()
     return {}
@@ -47,7 +45,7 @@ def train(config_train):
 
 def test(config_test):
     log.debug("start test")
-    config_test.runtime.use_ddp = False
+    config_test = copy_update(config_test, {"runtime": {"use_ddp": False}})
     test_only = config.args['test_only']
     resume = True
     if test_only:
@@ -58,7 +56,8 @@ def test(config_test):
     trainer.test()
 
 
-def single_start(local_rank: int, config: dict) -> None:
+def single_start(local_rank: int, config: dict, runtime_state: RuntimeState | None = None) -> None:
+    runtime_state = runtime_state or RuntimeState()
     log.info("creating trainer, local_rank: {}".format(local_rank))
     log.debug("torch cuda gpu num: {}".format(torch.cuda.device_count()))
 
@@ -76,12 +75,20 @@ def single_start(local_rank: int, config: dict) -> None:
                                 # timeout=datetime.timedelta(seconds=60)
                                 )
         log.debug(f"torch.distributed.is_initialized():{torch.distributed.is_initialized()}")
-        config.runtime.local_rank = local_rank
-        config.runtime.device = str(torch.device("cuda", config.runtime.local_rank))
+        config = copy_update(
+            config,
+            {
+                "runtime": {
+                    "local_rank": local_rank,
+                    "device": str(torch.device("cuda", local_rank)),
+                }
+            },
+        )
+        runtime_state.flags["ddp_initialized"] = True
         log.debug("env_local_rank: {}, dist_local_rank:{}".format(
             local_rank, torch.distributed.get_rank()))
     else:
-        config.runtime.local_rank = local_rank
+        config = copy_update(config, {"runtime": {"local_rank": local_rank}})
 
     config_train = deepcopy(config)
     
@@ -99,6 +106,7 @@ def single_start(local_rank: int, config: dict) -> None:
         bar.close()
         
     if config.args['train']:
+        runtime_state.flags["train_started"] = True
         log.debug(f'rank_{get_local_rank()}: start_training')
         train(config_train)
         log.debug(f'rank_{get_local_rank()}: end_training')
@@ -112,9 +120,10 @@ def single_start(local_rank: int, config: dict) -> None:
             log.debug(f'rank_{get_local_rank()}: destroyed process')
 
     if config.args['test'] and local_rank <= 0:
+        runtime_state.flags["test_started"] = True
         config_test = deepcopy(config)
         if config.args['train'] and 'time_string' in config_train.keys():
-            config_test.time_string = config_train.time_string
+            config_test = copy_update(config_test, {"time_string": config_train.time_string})
         test(config_test)
 
 
@@ -132,24 +141,26 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     config = load_task_config(args.config)
-    config.unfreeze()
-    config.runner.wait_to_start = args.wait_to_start
     input_config = copy.deepcopy(create_config(args.config, config))
-    # log.debug(dict_to_string(input_config))
-    config._input_config = input_config
-
-    config.args = vars(args)
+    config = copy_update(
+        config,
+        {
+            "runner": {"wait_to_start": args.wait_to_start},
+            "debug_input_config": input_config,
+            "args": vars(args),
+        },
+    )
     if (args.num_gpu) > 0:
-        config.runner.num_gpu = args.num_gpu
-    update_config(config)
-    enhance_train_config(config)
+        config = copy_update(config, {"runner": {"num_gpu": args.num_gpu}})
+    config = update_config(config)
+    config = enhance_train_config(config)
 
     log.debug("{}:\n {}".format(
         config.job_name, dict_to_string(config.args, 'args')))
 
     if config.runtime.use_ddp and config.args['train']:
-        config.runtime.world_size = config.runner.num_gpu
-        single_start(int(os.environ['LOCAL_RANK']), config)
+        config = copy_update(config, {"runtime": {"world_size": config.runner.num_gpu}})
+        single_start(int(os.environ['LOCAL_RANK']), config, RuntimeState())
         # import cProfile
         # cProfile.run("single_start(get_local_rank(), config)", filename=f"result_{get_local_rank()}.out", sort="cumulative")
         # MP.spawn(start_train, nprocs=config['num_gpu'], args=(config,))
@@ -165,6 +176,6 @@ if __name__ == "__main__":
         # if config['args']['multi']:
         #     multi_start(config)
         # else:
-        single_start(-1, config)
+        single_start(-1, config, RuntimeState())
         # import cProfile
         # cProfile.run("single_start(-1, config)", filename=f"result.out", sort="cumulative")

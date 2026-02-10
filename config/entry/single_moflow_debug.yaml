@@ -37,7 +37,7 @@ runner:
     entry: MFRRNetRunner
     num_gpu: 1
 runtime:
-    cuda_visible_devices: "0"
+    cuda_visible_devices: [0]
 
 output_root_path: "../output/train_output/"
 # clear_output_path: True

@@ -50,17 +50,17 @@ def _minimal_config_dict() -> dict:
 
 def test_update_config_sets_runtime_fields() -> None:
     config = MFRRTaskConfig.from_dict(_minimal_config_dict())
-    update_config(config)
-    assert config.runtime.use_gpu is True
-    assert config.runtime.use_ddp is True
-    assert config.train_parameter.batch_size == 2
-    assert config.dataset.train_num_worker == 2
+    updated = update_config(config)
+    assert updated.runtime.use_gpu is True
+    assert updated.runtime.use_ddp is True
+    assert updated.train_parameter.batch_size == 2
+    assert updated.dataset.train_num_worker == 2
 
 
 def test_enhance_train_config_updates_dataset_and_buffer() -> None:
     config = MFRRTaskConfig.from_dict(_minimal_config_dict())
-    update_config(config)
-    enhance_train_config(config)
-    assert config.dataset.require_list == ["scene_color"]
-    assert config.buffer_config["history_config"] == config.dataset.history_config
-    assert config.dataset.path == "/tmp"
+    updated = update_config(config)
+    enhanced = enhance_train_config(updated)
+    assert enhanced.dataset.require_list == ["scene_color"]
+    assert enhanced.buffer_config["history_config"] == enhanced.dataset.history_config
+    assert enhanced.dataset.path == "/tmp"

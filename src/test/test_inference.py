@@ -32,6 +32,7 @@ from utils.flow_vis import flow_to_image, mv_to_image
 from utils.utils import (Accumulator, create_dir, del_data, del_dict_item,
                          remove_all_in_dir, write_text_to_file)
 from wickit.config import load_task_config
+from wickit.config import copy_update
 from wickit.dataloaders.metadata import MetaData
 from wickit.models import MODELS
 from wickit.runner import RUNNERS
@@ -239,16 +240,22 @@ def inference():
 
 
 def update_inference_config(config):
-    if hasattr(config, "unfreeze") and getattr(config, "_frozen", False):
-        config.unfreeze()
-    if hasattr(config, "_allow_new_keys"):
-        config._allow_new_keys = True
-    config._input_config = copy.deepcopy(config.to_dict() if hasattr(config, "to_dict") else config)
-    update_config(config)
-    config.runtime.local_rank = 0
-    config.runtime.use_ddp = False
-    config.runtime.use_gpu = config.runner.num_gpu > 0
-    config.runtime.device = "cuda:0" if config.runtime.use_gpu else "cpu"
+    cfg = copy_update(
+        config,
+        {"debug_input_config": copy.deepcopy(config.to_dict() if hasattr(config, "to_dict") else config)},
+    )
+    cfg = update_config(cfg)
+    return copy_update(
+        cfg,
+        {
+            "runtime": {
+                "local_rank": 0,
+                "use_ddp": False,
+                "use_gpu": cfg.runner.num_gpu > 0,
+                "device": "cuda:0" if cfg.runner.num_gpu > 0 else "cpu",
+            }
+        },
+    )
 
 
 if __name__ == '__main__':
@@ -293,14 +300,6 @@ if __name__ == '__main__':
     config_path = [os.path.normpath(path.replace("\\", os.sep)) for path in config_path]
     loaded_configs = [load_task_config(path) for path in config_path]
 
-    if hasattr(dataset_cfg, "unfreeze") and getattr(dataset_cfg, "_frozen", False):
-        dataset_cfg.unfreeze()
-    if hasattr(dataset_cfg, "_allow_new_keys"):
-        dataset_cfg._allow_new_keys = True
-    if hasattr(dataset_cfg, "dataset") and hasattr(dataset_cfg.dataset, "unfreeze") and getattr(dataset_cfg.dataset, "_frozen", False):
-        dataset_cfg.dataset.unfreeze()
-    if hasattr(dataset_cfg, "dataset") and hasattr(dataset_cfg.dataset, "_allow_new_keys"):
-        dataset_cfg.dataset._allow_new_keys = True
 
     scene_name = cmd_scene.split("_")[0] + "_T"
     path_alias = scene_name
@@ -309,21 +308,20 @@ if __name__ == '__main__':
 
     global_start = frame_idx - 8
     global_end = frame_idx + 8
-    dataset_cfg.dataset.train_scene = [
-        {"name": f"{scene_name}/{inference_name}_720", "config": {"indice": [], "path_alias": path_alias}},
-    ]
+    train_scene = [{"name": f"{scene_name}/{inference_name}_720", "config": {"indice": [], "path_alias": path_alias}}]
     if export_image:
-        dataset_cfg.dataset.test_scene = [
+        test_scene = [
             {"name": f"{scene_name}/{inference_name}_720",
                 "config": {"indice": [global_start-1, global_end+1], "path_alias": path_alias}},
         ]
     else:
-        dataset_cfg.dataset.test_scene = [
+        test_scene = [
             {"name": f"{scene_name}/{inference_name}_720", "config": {"indice": [], "path_alias": path_alias}},
         ]
+    dataset_cfg = copy_update(dataset_cfg, {"dataset": {"train_scene": train_scene, "test_scene": test_scene}})
     log.debug(dict_to_string(dataset_cfg.dataset.test_scene))
-    update_inference_config(dataset_cfg)
-    enhance_train_config(dataset_cfg)
+    dataset_cfg = update_inference_config(dataset_cfg)
+    dataset_cfg = enhance_train_config(dataset_cfg)
     if export_image:
         inference_name = mode + "_" + inference_name + f"_figure_{frame_idx}"
     else:
@@ -334,7 +332,7 @@ if __name__ == '__main__':
     # dataset_cfg['dataset']['train_scene'] = [
     #     {"name":"FC/FC_04", "config":{"indice":[]}},
     # ]
-    dataset_cfg.log_to_file = False
+    dataset_cfg = copy_update(dataset_cfg, {"log_to_file": False})
     dataset_trainer = RUNNERS.build(dataset_cfg.runner.entry, dataset_cfg, None, resume=False)
     dataset_trainer.prepare('test')
     dataset_trainer.create_test_dataset(0)
@@ -358,15 +356,18 @@ if __name__ == '__main__':
     for i in range(len(config_path)):
         tmp_config = copy.deepcopy(loaded_configs[i])
         # log.debug(dict_to_string(tmp_config.model.input_buffer))
-        update_inference_config(tmp_config)
-        enhance_train_config(tmp_config)
+        tmp_config = update_inference_config(tmp_config)
+        tmp_config = enhance_train_config(tmp_config)
         configs.append(tmp_config)
         config_train = copy.deepcopy(tmp_config)
-        if hasattr(config_train, "unfreeze") and getattr(config_train, "_frozen", False):
-            config_train.unfreeze()
-        config_train.model.input_buffer = dataset_cfg.model.input_buffer
-        config_train.dataset.enable = False
-        config_train.initial_inference = False
+        config_train = copy_update(
+            config_train,
+            {
+                "model": {"input_buffer": dataset_cfg.model.input_buffer},
+                "dataset": {"enable": False},
+                "initial_inference": False,
+            },
+        )
         # log.debug(dict_to_string(dataset_cfg['model']['input_buffer']))
         tmp_model = MODELS.build(config_train.model.entry, config_train)
 
@@ -379,7 +380,7 @@ if __name__ == '__main__':
         # resume = True
         # if mode == "interp" or mode == "extrap":
         resume = False
-        config_train.log_to_file = False
+        config_train = copy_update(config_train, {"log_to_file": False})
         tmp_trainer = RUNNERS.build(config_train.runner.entry, config_train, tmp_model, resume=resume)
         tmp_trainer.prepare("test")
         current_write_path = write_path + \
@@ -396,17 +397,20 @@ if __name__ == '__main__':
             for j in range(block_sizes[i]):
                 vars_update[f"{item}_{j}_acc"] = Accumulator()
 
-        tmp_trainer.config.merge({
-            "vars": vars_update,
-            "write_path": current_write_path,
-            "runner": {
-                "recurrent_test": {
-                    "block_size": [
-                        {'start': 0, 'end': 1, 'value': block_sizes[i], 'ratio': True},
-                    ]
-                }
-            }
-        })
+        tmp_trainer.config = copy_update(
+            tmp_trainer.config,
+            {
+                "vars": vars_update,
+                "write_path": current_write_path,
+                "runner": {
+                    "recurrent_test": {
+                        "block_size": [
+                            {"start": 0, "end": 1, "value": block_sizes[i], "ratio": True},
+                        ]
+                    }
+                },
+            },
+        )
 
         tmp_trainer.last_output = []
         create_dir(tmp_trainer.config.write_path)

@@ -1,5 +1,6 @@
 import copy
 import json
+from wickit.config import copy_update
 from utils.dataset_utils import get_input_filter_list
 from utils.parser_utils import parse_buffer_name
 from wickit.utils.basic.string import dict_to_string
@@ -10,8 +11,7 @@ default_scale_config = {"ds_scale": 2}
 
 
 def _ensure_unfrozen(config) -> None:
-    if hasattr(config, "unfreeze") and getattr(config, "_frozen", False):
-        config.unfreeze()
+    return
 
 
 def initialize_recipe(recipe: dict, history_num: int = -1, history_list: list[int] = [], 
@@ -151,41 +151,57 @@ def enhance_buffer_config(buffer_config, history_num=3, history_list=[], scale_c
 
 
 def enhance_train_config(config):
-    _ensure_unfrozen(config)
-    config.dataset.augment_loader = config.dataset.get("augment_loader", True)
+    augment_loader = bool(config.dataset.get("augment_loader", True))
     input_buffer = config.model.get("require_data", {})
-    config.dataset.require_list = get_input_filter_list({
+    require_list = get_input_filter_list({
         "input_config": config,
         "input_buffer": input_buffer,
     })
-    history_config = config.dataset["history_config"]
+    history_config = copy.deepcopy(config.dataset["history_config"])
     history_num = history_config["num"]
     history_list = history_config.get("index", [i for i in range(history_num)])
     history_config["index"] = history_list
+    buffer_config = copy.deepcopy(config.buffer_config)
     if "demodulation_mode" in config.dataset.keys():
-        config.buffer_config["demodulation_mode"] = config.dataset.demodulation_mode
+        buffer_config["demodulation_mode"] = config.dataset.demodulation_mode
     # log.debug(dict_to_string([history_num, history_list]))
     enhance_buffer_config(
-        config.buffer_config,
+        buffer_config,
         history_num=history_num,
         history_list=history_list,
         scale_config=config.dataset.get("scale_config", {}),
     )
     
     ''' set history_config to buffer_config '''
-    config.buffer_config["history_config"] = config.dataset.get("history_config", None)
+    buffer_config["history_config"] = history_config
     
     ''' add export_path overwrite'''
-    config.dataset.path = config.job_config["export_path"]
+    dataset_patch = {
+        "augment_loader": augment_loader,
+        "require_list": require_list,
+        "history_config": history_config,
+        "path": config.job_config["export_path"],
+    }
+    return copy_update(config, {"dataset": dataset_patch, "buffer_config": buffer_config})
     
     
 def update_config(config):
-    _ensure_unfrozen(config)
     num_gpu = config.runner.num_gpu
-    config.runtime.use_ddp = num_gpu > 1
-    config.runtime.use_gpu = num_gpu > 0
-    config.runtime.device = "cuda:0" if config.runtime.use_gpu else "cpu"
+    use_gpu = num_gpu > 0
+    use_ddp = num_gpu > 1
     assert config.train_parameter.batch_size % max(num_gpu, 1) == 0
-    config.train_parameter.batch_size = config.train_parameter.batch_size // max(num_gpu, 1)
+    batch_size = config.train_parameter.batch_size // max(num_gpu, 1)
     assert config.dataset.train_num_worker_sum % max(num_gpu, 1) == 0
-    config.dataset.train_num_worker = config.dataset.train_num_worker_sum // max(num_gpu, 1)
+    train_num_worker = config.dataset.train_num_worker_sum // max(num_gpu, 1)
+    return copy_update(
+        config,
+        {
+            "runtime": {
+                "use_ddp": use_ddp,
+                "use_gpu": use_gpu,
+                "device": "cuda:0" if use_gpu else "cpu",
+            },
+            "train_parameter": {"batch_size": batch_size},
+            "dataset": {"train_num_worker": train_num_worker},
+        },
+    )

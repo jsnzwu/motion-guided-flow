@@ -104,7 +104,6 @@ class MFRRNetRunner(Runner):
 
     def create_test_dataset(self, epoch_index: int = 0) -> None:
         test_config = copy.deepcopy(self.config)
-        test_config.unfreeze()
         test_config.buffer_config['crop_config']['enable'] = False
         self.test_dataset = MFRRNetDataset(
             test_config,
@@ -117,7 +116,6 @@ class MFRRNetRunner(Runner):
 
     def create_valid_dataset(self) -> None:
         valid_config = copy.deepcopy(self.config)
-        valid_config.unfreeze()
         valid_config.buffer_config['crop_config']['enable'] = False
         if len(self.valid_meta_data_list) > 0:
             self.valid_dataset = MFRRNetDataset(

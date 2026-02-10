@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
+from pydantic import Field
+
 from wickit.config.components import (
+    ConfigStruct,
     DatasetConfig as WickitDatasetConfig,
     JobConfig as WickitJobConfig,
     LearningRateConfig,
@@ -19,123 +21,86 @@ from wickit.config import CONFIGS
 from wickit.logging.config import LoggingConfig
 
 
-# ========== Dataset Configs ==========
-
-@dataclass
 class FGDatasetConfig(WickitDatasetConfig):
-    scale_config: Dict[str, Any] = field(default_factory=dict)
-    require_list: List[str] = field(default_factory=list)
+    scale_config: Dict[str, Any] = Field(default_factory=dict)
+    require_list: List[str] = Field(default_factory=list)
     demodulation_mode: str = ""
     part_size: int = 0
-    future_config: Dict[str, Any] = field(default_factory=dict)
+    future_config: Dict[str, Any] = Field(default_factory=dict)
 
 
-# ========== Job Configs ==========
-
-@dataclass
 class MFRRJobConfig(WickitJobConfig):
     export_path: str = ""
     num_thread: int = 0
     import_path: str = ""
-    dataset_path: Dict[str, str] = field(default_factory=dict)
+    dataset_path: Dict[str, str] = Field(default_factory=dict)
     dataset_format: str = ""
     overwrite: bool = False
-    scene: List[str] = field(default_factory=list)
-    test_config: Dict[str, Any] = field(default_factory=dict)
+    scene: List[str] = Field(default_factory=list)
+    test_config: Dict[str, Any] = Field(default_factory=dict)
     scene_info_name: str = ""
     pattern: str = ""
     num_history_frame: int = 0
 
 
-# ========== Model Configs ==========
-
-@dataclass
 class FGModelConfig(WickitModelConfig):
     export_onnx: bool = False
-    config: Dict[str, Any] = field(default_factory=dict)
-    debug: List[str] = field(default_factory=list)
-    feature: List[str] = field(default_factory=list)
-    feature_config: Dict[str, Any] = field(default_factory=dict)
-    loss_config: Dict[str, Any] = field(default_factory=dict)
-    loss: List[str] = field(default_factory=list)
+    config: Dict[str, Any] = Field(default_factory=dict)
+    debug: List[str] = Field(default_factory=list)
+    feature: List[str] = Field(default_factory=list)
+    feature_config: Dict[str, Any] = Field(default_factory=dict)
+    loss_config: Dict[str, Any] = Field(default_factory=dict)
+    loss: List[str] = Field(default_factory=list)
 
 
-@dataclass
 class MFRRModelConfig(FGModelConfig):
-    require_data: List[str] = field(default_factory=list)
-    input_buffer: List[str] = field(default_factory=list)
+    require_data: List[str] = Field(default_factory=list)
+    input_buffer: List[str] = Field(default_factory=list)
     arch: str = ""
     gt_alias: str = ""
     method: str = ""
     tonemap_in_his_encoder: bool = False
     residual_item: str = ""
-    st_color_names: List[str] = field(default_factory=list)
-    st_history_names: List[str] = field(default_factory=list)
-    pred_buffers: List[str] = field(default_factory=list)
-    gbuffer_encoder: Dict[str, Any] = field(default_factory=dict)
-    scene_color_encoder: Dict[str, Any] = field(default_factory=dict)
-    scene_color_encoder_no_st: Dict[str, Any] = field(default_factory=dict)
-    st_color_encoder: Dict[str, Any] = field(default_factory=dict)
-    shade_decoder__residual: Dict[str, Any] = field(default_factory=dict)
-    shade_decoder: Dict[str, Any] = field(default_factory=dict)
-    history_encoders: Dict[str, Any] = field(default_factory=dict)
-    history_no_st_encoders: Dict[str, Any] = field(default_factory=dict)
-    history_st_encoders: Dict[str, Any] = field(default_factory=dict)
+    st_color_names: List[str] = Field(default_factory=list)
+    st_history_names: List[str] = Field(default_factory=list)
+    pred_buffers: List[str] = Field(default_factory=list)
+    gbuffer_encoder: Dict[str, Any] = Field(default_factory=dict)
+    scene_color_encoder: Dict[str, Any] = Field(default_factory=dict)
+    scene_color_encoder_no_st: Dict[str, Any] = Field(default_factory=dict)
+    st_color_encoder: Dict[str, Any] = Field(default_factory=dict)
+    shade_decoder__residual: Dict[str, Any] = Field(default_factory=dict)
+    shade_decoder: Dict[str, Any] = Field(default_factory=dict)
+    history_encoders: Dict[str, Any] = Field(default_factory=dict)
+    history_no_st_encoders: Dict[str, Any] = Field(default_factory=dict)
+    history_st_encoders: Dict[str, Any] = Field(default_factory=dict)
     scene_color_encoder_output_prefix: str = ""
     st_color_encoder_output_prefix: str = ""
 
 
-# ========== Runner Configs ==========
-
-@dataclass
 class MFRRRunnerConfig(WickitRunnerConfig):
     recurrent_train_start: float = 0.0
-    recurrent_train: Dict[str, Any] = field(default_factory=dict)
-    recurrent_test: Dict[str, Any] = field(default_factory=dict)
+    recurrent_train: Dict[str, Any] = Field(default_factory=dict)
+    recurrent_test: Dict[str, Any] = Field(default_factory=dict)
 
-
-# ========== Task Configs (registered to CONFIGS) ==========
 
 @CONFIGS.register_module(name="MFRRTaskConfig")  # type: ignore[arg-type]
-@dataclass
 class MFRRTaskConfig(WickitTaskConfig):
     log_to_file: bool = False
-    # Keep field types aligned with wickit base class to avoid invariant override issues in type checkers.
-    # We still build project-specific subclasses via default_factory and from_dict coercion.
-    dataset: WickitDatasetConfig = field(default_factory=FGDatasetConfig)
-    model: WickitModelConfig = field(default_factory=MFRRModelConfig)
-    runner: WickitRunnerConfig = field(default_factory=MFRRRunnerConfig)
-    job_config: WickitJobConfig = field(default_factory=MFRRJobConfig)
-    vars: Dict[str, Any] = field(default_factory=dict)
+    dataset: FGDatasetConfig = Field(default_factory=FGDatasetConfig)
+    model: MFRRModelConfig = Field(default_factory=MFRRModelConfig)
+    runner: MFRRRunnerConfig = Field(default_factory=MFRRRunnerConfig)
+    job_config: MFRRJobConfig = Field(default_factory=MFRRJobConfig)
+    vars: Dict[str, Any] = Field(default_factory=dict)
     write_path: str = ""
     exp_name: str = ""
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> MFRRTaskConfig:
-        # Coerce nested config dicts into project-specific config subclasses so downstream code
-        # can rely on the extended fields.
-        coerced: Dict[str, Any] = dict(data)
-
-        dataset = coerced.get("dataset")
-        if isinstance(dataset, dict):
-            coerced["dataset"] = FGDatasetConfig.from_dict(dataset)
-
-        model = coerced.get("model")
-        if isinstance(model, dict):
-            coerced["model"] = MFRRModelConfig.from_dict(model)
-
-        runner = coerced.get("runner")
-        if isinstance(runner, dict):
-            coerced["runner"] = MFRRRunnerConfig.from_dict(runner)
-
-        job_config = coerced.get("job_config")
-        if isinstance(job_config, dict):
-            coerced["job_config"] = MFRRJobConfig.from_dict(job_config)
-
-        return super().from_dict(coerced)
+        return cls.model_validate(data)
 
 
 __all__ = [
+    "ConfigStruct",
     "FGDatasetConfig",
     "FGModelConfig",
     "MFRRJobConfig",
